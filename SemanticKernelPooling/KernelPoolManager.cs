@@ -1,24 +1,22 @@
 ﻿using System.Collections.Concurrent;
+using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
+using SemanticKernelPooling.Configuration;
 
 namespace SemanticKernelPooling;
 
 public class KernelPoolManager : IKernelPool
 {
-    private readonly ConcurrentBag<Kernel> _kernelPool;
-    private readonly SemaphoreSlim _semaphore;
-    private readonly List<AzureOpenAIConfiguration> _configs;
-    private readonly int _skKernelPoolSize;
-    private readonly List<Action<IKernelBuilder, AzureOpenAIConfiguration>> _beforeKernelBuildInitializers = new();
-
-    private readonly List<Action<Kernel, AzureOpenAIConfiguration>> _afterKernelBuildInitializers = new();
+    private readonly ConcurrentDictionary<string, IKernelPool> _kernelPools;
+    private readonly List<AIServiceProviderConfiguration> _configs;
+    private readonly List<Action<Kernel, AIServiceProviderConfiguration>> _afterKernelBuildInitializers = new();
     private readonly ILogger<KernelPoolManager> _logger;
     private readonly int _maxWaitForKernelInSeconds;
 
-    public KernelPoolManager(IOptions<List<AzureOpenAIConfiguration>> options, IConfiguration configuration,
+    public KernelPoolManager(IOptions<List<AIServiceProviderConfiguration>> options, IConfiguration configuration,
         ILogger<KernelPoolManager> logger)
     {
         _configs = options.Value;
@@ -42,18 +40,28 @@ public class KernelPoolManager : IKernelPool
         }
     }
 
-    private Kernel CreateKernel(AzureOpenAIConfiguration config, int i)
+    private Kernel CreateKernel(AIServiceProviderConfiguration config, int i)
     {
         var kernelBuilder = Kernel.CreateBuilder();
-        AzureOpenAIConfiguration newConfig = config with { UniqueName = $"{config.UniqueName}{i}" };
+        
+        AIServiceProviderConfiguration newConfig = config with { UniqueName = $"{config.UniqueName}{i}" };
+        bool shouldAutoAddChatCompletionService = true;
+        HttpClient? httpClient = null;
 
         foreach (var preKernelInitializer in _beforeKernelBuildInitializers)
         {
+            CustomKernelBuilderConfig customConfig = new();
+            preKernelInitializer(kernelBuilder, newConfig, customConfig);
 
-            preKernelInitializer(kernelBuilder, newConfig);
+            shouldAutoAddChatCompletionService &= customConfig.ShouldAutoAddChatCompletionService;
+            httpClient ??= customConfig.HttpClient;
         }
 
         var kernel = kernelBuilder.Build();
+        if (shouldAutoAddChatCompletionService)
+        {
+            //register chat completion service according to the service type
+        }
 
         foreach (var postKernelInitializer in _afterKernelBuildInitializers)
         {
@@ -88,7 +96,8 @@ public class KernelPoolManager : IKernelPool
         throw new InvalidOperationException("No available kernels in the pool after waiting.");
     }
 
-    public void RegisterForPreKernelCreation(Action<IKernelBuilder, AzureOpenAIConfiguration> action)
+    public void RegisterForPreKernelCreation<TServiceProviderConfiguration>(Action<IKernelBuilder, TServiceProviderConfiguration, CustomKernelBuilderConfig> action) 
+        where TServiceProviderConfiguration : AIServiceProviderConfiguration
     {
         if (!_kernelPool.IsEmpty)
             throw new InvalidOperationException("Cannot register for kernel creation when there are kernels in the pool.");
@@ -96,7 +105,8 @@ public class KernelPoolManager : IKernelPool
         _beforeKernelBuildInitializers.Add(action);
     }
 
-    public void RegisterForAfterKernelCreation(Action<Kernel, AzureOpenAIConfiguration> action)
+    public void RegisterForAfterKernelCreation<TServiceProviderConfiguration>(Action<IKernelBuilder, TServiceProviderConfiguration> action)
+        where TServiceProviderConfiguration : AIServiceProviderConfiguration
     {
         if (!_kernelPool.IsEmpty)
             throw new InvalidOperationException("Cannot register for kernel creation when there are kernels in the pool.");
