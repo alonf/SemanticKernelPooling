@@ -1,125 +1,99 @@
 ﻿using System.Collections.Concurrent;
-using System.Threading;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.SemanticKernel;
-using SemanticKernelPooling.Configuration;
 
 namespace SemanticKernelPooling;
 
-public class KernelPoolManager : IKernelPool
+/// <summary>
+/// Manages kernel pools and provides methods to register and retrieve kernel pools for different AI service providers.
+/// Implements both <see cref="IKernelPoolManager"/> and <see cref="IKernelPoolFactoryRegistrar"/>.
+/// </summary>
+public class KernelPoolManager : IKernelPoolFactoryRegistrar, IKernelPoolManager
 {
-    private readonly ConcurrentDictionary<string, IKernelPool> _kernelPools;
     private readonly List<AIServiceProviderConfiguration> _configs;
-    private readonly List<Action<Kernel, AIServiceProviderConfiguration>> _afterKernelBuildInitializers = new();
     private readonly ILogger<KernelPoolManager> _logger;
-    private readonly int _maxWaitForKernelInSeconds;
+    private readonly ConcurrentDictionary<AIServiceProviderType,
+        Func<AIServiceProviderConfiguration, ILoggerFactory, IKernelPool>> _kernelPoolFactoryMethods = new();
+    private readonly ConcurrentDictionary<AIServiceProviderType, IKernelPool> _kernelPools = new();
+    private readonly ILoggerFactory _loggerFactory;
 
-    public KernelPoolManager(IOptions<List<AIServiceProviderConfiguration>> options, IConfiguration configuration,
-        ILogger<KernelPoolManager> logger)
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="KernelPoolManager"/> class with the specified configurations and logging facilities.
+    /// </summary>
+    /// <param name="options">The options containing the list of AI service provider configurations.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
+    /// <param name="loggerFactory">The logger factory for creating loggers.</param>
+    /// <exception cref="InvalidOperationException">Thrown if no AI provider service configurations are provided.</exception>
+    public KernelPoolManager(IOptions<List<AIServiceProviderConfiguration>> options, 
+        ILogger<KernelPoolManager> logger,
+        ILoggerFactory loggerFactory)
     {
         _configs = options.Value;
         if (_configs.Count == 0)
-            throw new InvalidOperationException("No Azure OpenAI configurations provided.");
+            throw new InvalidOperationException("No AI provider service configurations provided.");
 
-        _skKernelPoolSize = configuration.GetValue<int?>("SKKernelPoolSize") ?? throw new ArgumentException("Missing SKKernelPoolSize in configuration");
-        _kernelPool = new ConcurrentBag<Kernel>();
-        _semaphore = new SemaphoreSlim(_skKernelPoolSize);
         _logger = logger;
-        _maxWaitForKernelInSeconds = configuration.GetValue<int?>("SKKernelPoolMaxWait") ?? 60;
+        _loggerFactory = loggerFactory;
     }
 
-    public void Initialize()
+    /// <inheritdoc />
+    public async Task<KernelWrapper> GetKernelAsync(AIServiceProviderType aiServiceProviderType)
     {
-        for (int i = 0; i < _skKernelPoolSize; i++)
-        {
-            var config = _configs[i % _configs.Count];
-            var kernel = CreateKernel(config, i);
-            _kernelPool.Add(kernel);
-        }
-    }
-
-    private Kernel CreateKernel(AIServiceProviderConfiguration config, int i)
-    {
-        var kernelBuilder = Kernel.CreateBuilder();
+        //get the configuration for the service provider type
+        var config = _configs.FirstOrDefault(c => c.ServiceType == aiServiceProviderType);
         
-        AIServiceProviderConfiguration newConfig = config with { UniqueName = $"{config.UniqueName}{i}" };
-        bool shouldAutoAddChatCompletionService = true;
-        HttpClient? httpClient = null;
+        if (config == null)
+            throw new InvalidOperationException($"No configuration found for service provider type {aiServiceProviderType}");
 
-        foreach (var preKernelInitializer in _beforeKernelBuildInitializers)
+        //first check if we already have the required pool
+        if (!_kernelPools.TryGetValue(aiServiceProviderType, out IKernelPool? kernelPool))
         {
-            CustomKernelBuilderConfig customConfig = new();
-            preKernelInitializer(kernelBuilder, newConfig, customConfig);
-
-            shouldAutoAddChatCompletionService &= customConfig.ShouldAutoAddChatCompletionService;
-            httpClient ??= customConfig.HttpClient;
+            //if not, create the pool
+            kernelPool = CreateKernelPool(aiServiceProviderType);
         }
 
-        var kernel = kernelBuilder.Build();
-        if (shouldAutoAddChatCompletionService)
-        {
-            //register chat completion service according to the service type
-        }
+        //get a kernel from the pool
+        var kernelWrapper = await kernelPool.GetKernelAsync();
 
-        foreach (var postKernelInitializer in _afterKernelBuildInitializers)
-        {
-            postKernelInitializer(kernel, newConfig);
-        }
-
-        return kernel;
+        return kernelWrapper;
     }
 
-    public async Task<KernelWrapper> GetKernelAsync()
-    {
-        var enterWaitTime = DateTime.Now;
-        _logger.LogInformation("Waiting for a kernel to be available in the pool.");
+    /// <summary>
+    /// Creates a new kernel pool for the specified AI service provider type using the registered factory method.
+    /// </summary>
+    /// <param name="aiServiceProviderType">The type of the AI service provider.</param>
+    /// <returns>An instance of <see cref="IKernelPool"/> created using the factory method.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if no factory method is registered for the specified service type.</exception>
 
-        var result = await _semaphore.WaitAsync(TimeSpan.FromSeconds(_maxWaitForKernelInSeconds)).ConfigureAwait(false);
-        if (!result)
+    private IKernelPool CreateKernelPool(AIServiceProviderType aiServiceProviderType)
+    {
+        _logger.LogInformation("Creating kernel pool for service provider type {serviceProviderType}", aiServiceProviderType);
+
+        //get the factory method, throw exception if not found
+        if (!_kernelPoolFactoryMethods.TryGetValue(aiServiceProviderType, out var factoryMethod))
+            throw new KeyNotFoundException($"No factory method registered for service type {aiServiceProviderType}");
+
+        //create the pool
+        var kernelPool = factoryMethod(_configs.First(c => c.ServiceType == aiServiceProviderType), _loggerFactory);
+
+        //store the pool. only if it is not exist. Be aware that concurrent call may try to store it
+        if (!_kernelPools.TryAdd(aiServiceProviderType, kernelPool))
         {
-            _logger.LogError("No kernel available in the pool after waiting for {waitTime} ms. Free kernels: {kernelAvailability}",
-                (DateTime.Now - enterWaitTime).TotalMilliseconds, _kernelPool.Count);
-            throw new InvalidOperationException("No available kernels in the pool after waiting.");
+            kernelPool = _kernelPools[aiServiceProviderType]; //take the existing one
         }
+        
+        _logger.LogInformation("Kernel pool created for service provider type {serviceProviderType}", aiServiceProviderType);
 
-        _logger.LogInformation("Kernel available in the pool after waiting for {waitTime} ms. Free kernels: {kernelAvailability}",
-            (DateTime.Now - enterWaitTime).TotalMilliseconds, _kernelPool.Count);
-
-        if (_kernelPool.TryTake(out var kernel))
-        {
-            return new KernelWrapper(kernel, this, _logger);
-        }
-
-        // In case something went wrong, and no kernel was available after waiting
-        throw new InvalidOperationException("No available kernels in the pool after waiting.");
+        //service pools may be created concurrently, ensure we get the correct pool
+        return kernelPool;
     }
 
-    public void RegisterForPreKernelCreation<TServiceProviderConfiguration>(Action<IKernelBuilder, TServiceProviderConfiguration, CustomKernelBuilderConfig> action) 
-        where TServiceProviderConfiguration : AIServiceProviderConfiguration
+    /// <inheritdoc />
+    public void RegisterKernelPoolFactory(AIServiceProviderType azureOpenAI, Func<AIServiceProviderConfiguration, ILoggerFactory, IKernelPool> kernelPoolFactory)
     {
-        if (!_kernelPool.IsEmpty)
-            throw new InvalidOperationException("Cannot register for kernel creation when there are kernels in the pool.");
+        _logger.LogInformation("Registering kernel pool factory for service provider type {serviceProviderType}", azureOpenAI);
 
-        _beforeKernelBuildInitializers.Add(action);
-    }
-
-    public void RegisterForAfterKernelCreation<TServiceProviderConfiguration>(Action<IKernelBuilder, TServiceProviderConfiguration> action)
-        where TServiceProviderConfiguration : AIServiceProviderConfiguration
-    {
-        if (!_kernelPool.IsEmpty)
-            throw new InvalidOperationException("Cannot register for kernel creation when there are kernels in the pool.");
-
-        _afterKernelBuildInitializers.Add(action);
-    }
-
-
-    public void ReturnKernel(Kernel kernel)
-    {
-        _kernelPool.Add(kernel); // Add the kernel back to the pool
-
-        _logger.LogInformation("Kernel returned to the pool. Free kernels: {kernelAvailability}", _kernelPool.Count);
-        _semaphore.Release();    // Release the semaphore slot
+        _kernelPoolFactoryMethods[azureOpenAI] = kernelPoolFactory;
     }
 }

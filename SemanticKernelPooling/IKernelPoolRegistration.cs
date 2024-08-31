@@ -1,5 +1,4 @@
 ﻿using Microsoft.SemanticKernel;
-using SemanticKernelPooling.Configuration;
 
 namespace SemanticKernelPooling;
 
@@ -16,7 +15,7 @@ public interface IKernelPoolRegistration<out TServiceProviderConfiguration> : IK
     /// <param name="action">The action to be executed before kernel creation, which takes an <see cref="IKernelBuilder"/> 
     /// and <see cref="TServiceProviderConfiguration"/> as parameters.</param>
     /// <exception cref="InvalidOperationException">Thrown if kernels are already present in the pool.</exception>
-    void RegisterForPreKernelCreation(Action<IKernelBuilder, TServiceProviderConfiguration, CustomKernelBuilderConfig> action);
+    void RegisterForPreKernelCreation(Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions> action);
 
     /// <summary>
     /// Registers an action to be executed after a kernel is created. This action allows for 

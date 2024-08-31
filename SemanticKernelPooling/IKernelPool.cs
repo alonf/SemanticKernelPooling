@@ -2,8 +2,6 @@
 
 namespace SemanticKernelPooling;
 
-
-
 public interface IKernelPool
 {
     /// <summary>

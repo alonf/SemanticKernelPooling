@@ -1,28 +1,44 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Azure.AI.OpenAI;
+using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using SemanticKernelPooling.Configuration;
-using SemanticKernelPooling.ServicePools;
 
 namespace SemanticKernelPooling.Connectors.OpenAI;
 
-// ReSharper disable once ClassNeverInstantiated.Global
+/// <summary>
+/// Represents a kernel pool specifically designed for the Azure OpenAI service provider.
+/// </summary>
+/// <remarks>
+/// This class extends the <see cref="AIServicePool{TServiceProviderConfiguration}"/> class 
+/// and provides specific functionality for integrating with the Azure OpenAI service provider.
+/// It registers the chat completion service with the provided kernel configuration.
+/// </remarks>
 class AzureOpenAIKernelPool(
     AzureOpenAIConfiguration azureOpenAIConfiguration,
-    CustomKernelBuilderConfig customKernelBuilderConfig,
     ILoggerFactory loggerFactory)
-    : SpecificAIServicePool<AzureOpenAIConfiguration>(azureOpenAIConfiguration, customKernelBuilderConfig)
+    : AIServicePool<AzureOpenAIConfiguration>(azureOpenAIConfiguration)
 {
+    /// <summary>
+    /// Registers the chat completion service for the Azure OpenAI service provider with the specified kernel builder.
+    /// </summary>
+    /// <param name="kernelBuilder">The kernel builder to which the chat completion service will be added.</param>
+    /// <param name="config">The configuration settings for the Azure OpenAI service provider.</param>
+    /// <param name="httpClient">
+    /// An optional HTTP client instance. If not provided, the default HTTP client from the kernel will be used.
+    /// </param>
     protected override void RegisterChatCompletionService(IKernelBuilder kernelBuilder,
-        AzureOpenAIConfiguration config)
+        AzureOpenAIConfiguration config, HttpClient? httpClient)
     {
         kernelBuilder.AddAzureOpenAIChatCompletion(
             deploymentName: config.DeploymentName,
             apiKey: config.ApiKey,
             endpoint: config.Endpoint,
-            modelId: config.ModelId, // Optional name of the underlying model if the deployment name doesn't match the model name
-            serviceId: config.ServiceId, // Optional; for targeting specific services within Semantic Kernel
-            httpClient: HttpClient); // Optional; if not provided, the HttpClient from the kernel will be used   
+            modelId: string.IsNullOrEmpty(config.ModelId) ? null : config.ModelId, // Optional name of the underlying model if the deployment name doesn't match the model name
+            serviceId: string.IsNullOrEmpty(config.ServiceId) ? null : config.ServiceId, // Optional; for targeting specific services within Semantic Kernel
+            httpClient: httpClient); // Optional; if not provided, the HttpClient from the kernel will be used   
     }
 
+    /// <summary>
+    /// Gets the logger instance used for logging in this class.
+    /// </summary>
     protected override ILogger Logger { get; } = loggerFactory.CreateLogger<AzureOpenAIKernelPool>();
 }
