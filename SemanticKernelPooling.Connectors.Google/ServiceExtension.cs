@@ -22,7 +22,7 @@ namespace SemanticKernelPooling.Connectors.Google
         /// <exception cref="InvalidOperationException">
         /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
         /// </exception>
-        public static void UseGoogleKernelPool(this ServiceCollection services)
+        public static void UseGoogleKernelPool(this IServiceCollection services)
         {
             services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
                 AIServiceProviderType.Google,

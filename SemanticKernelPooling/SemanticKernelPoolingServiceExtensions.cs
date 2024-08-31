@@ -45,7 +45,7 @@ public static class SemanticKernelPoolingServiceExtensions
     /// <exception cref="InvalidOperationException">
     /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
     /// </exception>
-    public static IKernelPoolFactoryRegistrar GetKernelPoolFactoryRegistrar(this ServiceCollection services)
+    public static IKernelPoolFactoryRegistrar GetKernelPoolFactoryRegistrar(this IServiceCollection services)
     {
         var kernelPoolManager =
             services.BuildServiceProvider().GetRequiredService<IKernelPoolManager>();

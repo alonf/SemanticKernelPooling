@@ -23,7 +23,7 @@ namespace SemanticKernelPooling.Connectors.MistralAI
         /// <exception cref="InvalidOperationException">
         /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
         /// </exception>
-        public static void UseMistralAIKernelPool(this ServiceCollection services)
+        public static void UseMistralAIKernelPool(this IServiceCollection services)
         {
             services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
                 AIServiceProviderType.Mistral,

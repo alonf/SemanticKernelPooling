@@ -23,7 +23,7 @@ namespace SemanticKernelPooling.Connectors.OpenAI
         /// <exception cref="InvalidOperationException">
         /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
         /// </exception>
-        public static void UseAzureOpenAIKernelPool(this ServiceCollection services)
+        public static void UseAzureOpenAIKernelPool(this IServiceCollection services)
         {
             services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
                 AIServiceProviderType.AzureOpenAI,
@@ -45,7 +45,7 @@ namespace SemanticKernelPooling.Connectors.OpenAI
         /// <exception cref="InvalidOperationException">
         /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
         /// </exception>
-        public static void UseOpenAIKernelPool(this ServiceCollection services)
+        public static void UseOpenAIKernelPool(this IServiceCollection services)
         {
             services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
                 AIServiceProviderType.OpenAI,

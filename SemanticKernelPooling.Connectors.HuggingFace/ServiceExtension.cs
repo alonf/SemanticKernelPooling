@@ -23,7 +23,7 @@ namespace SemanticKernelPooling.Connectors.HuggingFace
         /// <exception cref="InvalidOperationException">
         /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
         /// </exception>
-        public static void UseHuggingFaceKernelPool(this ServiceCollection services)
+        public static void UseHuggingFaceKernelPool(this IServiceCollection services)
         {
             services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
                 AIServiceProviderType.HuggingFace,

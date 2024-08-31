@@ -12,7 +12,7 @@ public static class ServiceExtension
     /// Registers the Other AI service provider kernel pool with the service collection.
     /// </summary>
     /// <param name="services">The service collection to add the Other AI kernel pool to.</param>
-    public static void UseOtherAIKernelPool(this ServiceCollection services)
+    public static void UseOtherAIKernelPool(this IServiceCollection services)
     {
         services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(AIServiceProviderType.OtherAI,
             (aiServiceProviderConfiguration, loggerFactory) =>
