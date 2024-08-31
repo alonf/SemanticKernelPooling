@@ -17,6 +17,7 @@ public class KernelWrapper(Kernel kernel, IKernelPool pool, ILogger logger) : Dy
     private readonly DateTimeOffset _creationTime = DateTimeOffset.UtcNow;
     private bool _disposed;
 
+
     /// <summary>
     /// Gets the wrapped <see cref="Kernel"/> instance.
     /// </summary>
@@ -38,4 +39,16 @@ public class KernelWrapper(Kernel kernel, IKernelPool pool, ILogger logger) : Dy
         logger.LogInformation("Kernel usage time: {usageTime}",
             DateTimeOffset.UtcNow - _creationTime);
     }
+
+    /// <summary>
+    /// The list of scopes that the kernel pool of this wrapper.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global
+    public IReadOnlyList<string> Scopes { get; } = pool.Scopes;
+
+    /// <summary>
+    /// The type of AI service provider that this kernel pool supports.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global
+    public AIServiceProviderType ServiceProviderType { get; } = pool.ServiceProviderType;
 }

@@ -149,7 +149,7 @@ To add a new AI service provider:
    ```csharp
    public static class ServiceExtension
    {
-       public static void UseNewAIKernelPool(this ServiceCollection services)
+       public static void UseNewAIKernelPool(this IServiceCollection services)
        {
            services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
                AIServiceProviderType.NewAI,

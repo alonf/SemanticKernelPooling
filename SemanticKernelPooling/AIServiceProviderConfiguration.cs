@@ -39,13 +39,13 @@ public abstract record AIServiceProviderConfiguration
     public int InstanceCount { get; init; }
 
     /// <summary>
-    /// Gets or sets the usage key for additional identification of the kernel provider.
+    /// Gets or sets the list of scopes for this configuration.
     /// </summary>
     /// <remarks>
-    /// This key is optional and can be used to distinguish different kernel providers under the same usage context.
-    /// For example, the same task could use both OpenAI and AzureOpenAI identified by different usage keys.
+    /// A scope is used to group kernel providers that share common characteristics or usage scenarios.
+    /// Multiple scopes can be assigned to a single configuration to support complex grouping and selection logic.
     /// </remarks>
-    public string UsageKey { get; set; } = string.Empty;
+    public List<string> Scopes { get; set; } = new List<string>();
 
     /// <summary>
     /// Gets or initializes the deployment text embedding used for text processing or embedding operations.

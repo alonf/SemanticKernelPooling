@@ -17,4 +17,14 @@ public interface IKernelPool
     /// </summary>
     /// <param name="kernel">The kernel to return to the pool.</param>
     void ReturnKernel(Kernel kernel);
+
+    /// <summary>
+    /// The list of scopes that this kernel pool supports.
+    /// </summary>
+    IReadOnlyList<string> Scopes { get; }
+
+    /// <summary>
+    /// The type of AI service provider that this kernel pool supports.
+    /// </summary>
+    AIServiceProviderType ServiceProviderType { get; }
 }

@@ -24,10 +24,14 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     {
         AIServiceProviderAIConfiguration = aiServiceProviderAIConfiguration;
         Semaphore = new SemaphoreSlim(1, aiServiceProviderAIConfiguration.InstanceCount);
+        Scopes = aiServiceProviderAIConfiguration.Scopes;
+        ServiceProviderType = aiServiceProviderAIConfiguration.ServiceType;
     }
 
     private readonly List<Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions>> _beforeKernelBuildInitializers = new();
     private readonly List<Action<Kernel, TServiceProviderConfiguration>> _afterKernelBuildInitializers = new();
+    private readonly List<Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions, IReadOnlyList<string>>> _beforeKernelBuildScopedInitializers = new();
+    private readonly List<Action<Kernel, TServiceProviderConfiguration, IReadOnlyList<string>>> _afterKernelBuildScopedInitializers = new();
 
     private readonly ConcurrentBag<Kernel> _kernels = new();
     private TServiceProviderConfiguration AIServiceProviderAIConfiguration { get; }
@@ -59,9 +63,16 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
 
         foreach (var preKernelInitializer in _beforeKernelBuildInitializers)
         {
+
             preKernelInitializer(kernelBuilder, newConfig, options);
 
             shouldAutoAddChatCompletionService &= options.ShouldAutoAddChatCompletionService;
+        }
+
+        foreach (var preKernelBuildScopedInitializer in _beforeKernelBuildScopedInitializers)
+        {
+            Logger.LogInformation("Executing pre-kernel scoped initialization action for kernel pool type: {poolType}.", newConfig.ServiceType);
+            preKernelBuildScopedInitializer(kernelBuilder, newConfig, options, newConfig.Scopes);
         }
 
         if (shouldAutoAddChatCompletionService)
@@ -70,6 +81,11 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
         }
 
         var kernel = kernelBuilder.Build();
+
+        foreach (var afterKernelBuildScopedInitializer in _afterKernelBuildScopedInitializers)
+        {
+            afterKernelBuildScopedInitializer(kernel, newConfig, newConfig.Scopes);
+        }
 
         foreach (var postKernelInitializer in _afterKernelBuildInitializers)
         {
@@ -137,6 +153,11 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
         _beforeKernelBuildInitializers.Add(action);
     }
 
+    public void RegisterForPreKernelCreation(string scope, Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions, IReadOnlyList<string>> action)
+    {
+        _beforeKernelBuildScopedInitializers.Add(action);
+    }
+
     /// <summary>
     /// Registers an action to be executed after a kernel is created. 
     /// This action allows for additional initialization or configuration of the kernel after it has been built.
@@ -150,6 +171,11 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
         _afterKernelBuildInitializers.Add(action);
     }
 
+    public void RegisterForAfterKernelCreation(string scope, Action<Kernel, TServiceProviderConfiguration, IReadOnlyList<string>> action)
+    {
+        _afterKernelBuildScopedInitializers.Add(action);
+    }
+
     /// <summary>
     /// Returns a kernel to the pool, making it available for reuse.
     /// </summary>
@@ -161,4 +187,7 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
         Logger.LogInformation("Kernel returned to the pool. Free kernels: {kernelAvailability}", _kernels.Count + Semaphore.CurrentCount);
         Semaphore.Release();    // Release the semaphore slot
     }
+
+    public IReadOnlyList<string> Scopes { get; }
+    public AIServiceProviderType ServiceProviderType { get; }
 }

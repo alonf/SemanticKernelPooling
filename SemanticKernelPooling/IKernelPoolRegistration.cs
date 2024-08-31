@@ -18,6 +18,15 @@ public interface IKernelPoolRegistration<out TServiceProviderConfiguration> : IK
     void RegisterForPreKernelCreation(Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions> action);
 
     /// <summary>
+    /// Registers an action to be executed before a kernel is created. This action allows for
+    /// customization of the kernel building process. The action is registered with a usage key, enabling different type of kernel providers
+    /// to share the same configuration.
+    /// </summary>
+    /// <param name="scope">The scope that enables filtering various kernel types to use the same configuration</param>
+    /// <param name="action">The configuration function</param>
+    void RegisterForPreKernelCreation(string scope, Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions, IReadOnlyList<string>> action);
+
+    /// <summary>
     /// Registers an action to be executed after a kernel is created. This action allows for 
     /// additional initialization or configuration of the kernel after it has been built.
     /// </summary>
@@ -25,4 +34,14 @@ public interface IKernelPoolRegistration<out TServiceProviderConfiguration> : IK
     /// and <see cref="TServiceProviderConfiguration"/> as parameters.</param>
     /// <exception cref="InvalidOperationException">Thrown if kernels are already present in the pool.</exception>
     void RegisterForAfterKernelCreation(Action<Kernel, TServiceProviderConfiguration> action);
+
+    /// <summary>
+    /// Registers an action to be executed after a kernel is created. This action allows for
+    /// customization of the kernel building process. The action is registered with a usage key, enabling different type of kernel providers
+    /// to share the same configuration.
+    /// </summary>
+    /// <param name="scope">The scope that enables filtering various kernel types to use the same configuration</param>
+    /// <param name="action">The configuration function</param>
+
+    void RegisterForAfterKernelCreation(string scope, Action<Kernel, TServiceProviderConfiguration, IReadOnlyList<string>> action);
 }
