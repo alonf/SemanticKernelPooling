@@ -1,109 +1,177 @@
-# SK Pool Library
+Creating a comprehensive `README.md` file for your solution is crucial for guiding users on how to understand, use, and contribute to your project. Here’s a new `README.md` template tailored to your solution, which appears to involve a kernel pooling framework for integrating various AI service providers using Semantic Kernel.
 
-**SK Pool Library** is a .NET library designed to efficiently manage a pool of Semantic Kernel (SK) instances for AI services, including Azure OpenAI, OpenAI, Hugging Face, and more. The library provides robust, thread-safe, and scalable management of multiple kernel instances, enabling developers to optimize resource usage and improve the performance of AI-driven applications.
+### README.md
+
+```markdown
+# SemanticKernelPooling
+
+SemanticKernelPooling is a .NET library designed to facilitate seamless integration with multiple AI service providers, such as OpenAI, Azure OpenAI, HuggingFace, Google, Mistral AI, and others. It utilizes a kernel pooling approach to manage resources efficiently and provide robust AI capabilities in your .NET applications.
 
 ## Features
 
-- **Kernel Pool Initialization**: Initialize a pool of kernels with multiple configurations, supporting various AI service endpoints like Azure OpenAI, OpenAI, and Hugging Face.
-- **General and Specific Pre/Post Kernel Actions**: Register both general actions (e.g., setting up SK functions, memory) and service-specific actions to customize kernel initialization and teardown.
-- **Flexible Kernel Retrieval**: Retrieve kernels based on type, endpoint, or other criteria using a simple, intuitive API.
-- **Round-Robin Kernel Allocation**: Distribute kernel usage evenly across all instances to balance the load and ensure optimal performance.
-- **Concurrency Control**: Manage concurrent access to kernel instances using thread-safe mechanisms like `SemaphoreSlim` to prevent conflicts and ensure reliable operations.
-- **Automatic Resource Management**: Implement `IDisposable` and other resource management patterns to ensure kernels are returned to the pool after use, preventing leaks and ensuring efficient reuse.
-- **Dynamic Pool Scaling**: Adjust the number of kernels in the pool dynamically based on application demand, allowing for scalable and flexible resource management.
-- **Comprehensive Error Handling**: Incorporate robust error handling strategies, including retry logic with Polly, to build resilient AI applications.
-- **Logging and Monitoring**: Integrate with common logging frameworks to provide detailed logs, monitoring, and observability of kernel usage, errors, and performance metrics.
-- **Custom Kernel Support**: Extend or override kernel creation logic to integrate custom kernels with specialized services or configurations.
+- **Kernel Pooling:** Efficiently manage and reuse kernels for different AI service providers.
+- **Support for Multiple Providers:** Integrates with various AI providers like OpenAI, Azure OpenAI, HuggingFace, Google, Mistral AI, and more.
+- **Extensibility:** Easily extendable to support additional AI service providers.
+- **Customizable Configuration:** Allows fine-tuning of kernel behavior and AI service integration settings.
+- **Logging Support:** Integrated with `Microsoft.Extensions.Logging` for detailed logging and diagnostics.
 
 ## Getting Started
 
 ### Prerequisites
 
-- .NET 8.0 or .NET Standard 2.0
-- NuGet Package Manager
+- .NET 8.0 or higher
+- NuGet packages:
+  - `Microsoft.Extensions.DependencyInjection`
+  - `Microsoft.Extensions.Logging`
+  - `Microsoft.SemanticKernel`
 
 ### Installation
 
-You can install the SK Pool Library via NuGet Package Manager:
+To install SemanticKernelPooling, you can use the NuGet package manager:
 
 ```bash
-dotnet add package SKPoolLibrary
+dotnet add package SemanticKernelPooling
 ```
 
 ### Basic Usage
 
-```csharp
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.SemanticKernel;
-using SKPoolLibrary;
-using System.Threading.Tasks;
+1. **Configure Services**
 
-class Program
-{
-    static async Task Main(string[] args)
-    {
-        var kernelPoolManager = new GenericKernelPoolManager<Kernel>(
-            configurations: GetKernelConfigurations(),
-            kernelFactory: new KernelFactory(),
-            logger: GetLogger());
+   Start by configuring the services in your `Program.cs` or `Startup.cs` file:
 
-        // Register general actions for kernel creation
-        kernelPoolManager.RegisterForPreKernelCreation((builder, config) =>
-        {
-            builder.Services.AddMemory();
-            builder.Services.AddTextCompletion();
-        });
+   ```csharp
+   using Microsoft.Extensions.DependencyInjection;
+   using Microsoft.Extensions.Logging;
+   using SemanticKernelPooling;
+   using SemanticKernelPooling.Connectors.OpenAI;
 
-        // Retrieve a kernel by type
-        var kernel = await kernelPoolManager.GetKernelAsync(typeof(AzureOpenAIKernel));
-        // Use the kernel...
-        kernel.Dispose(); // Return the kernel to the pool
-    }
-}
-```
+   var services = new ServiceCollection();
+   services.AddLogging(configure => configure.AddConsole());
+   services.UseSemanticKernelPooling(); // Core service pooling registration
+   services.UseOpenAIKernelPool();      // Register OpenAI kernel pool
+   services.UseAzureOpenAIKernelPool(); // Register Azure OpenAI kernel pool
 
-### Configuration
+   var serviceProvider = services.BuildServiceProvider();
+   ```
 
-The SK Pool Library allows flexible configuration of kernel instances. You can configure kernels for different AI services by providing custom configurations:
+2. **Configure Providers**
 
-```csharp
-var azureOpenAIConfig = new AzureOpenAIConfiguration
-{
-    UniqueName = "AzureEndpoint1",
-    Endpoint = "https://api.openai.com/v1/engines/davinci",
-    ApiKey = "YOUR_API_KEY",
-    DeploymentName = "text-davinci-003"
-};
+   You need to set up configuration settings for each AI service provider you intend to use. These settings can be defined in a `appsettings.json` or any configuration source supported by .NET:
 
-// Add multiple configurations
-var configurations = new List<IKernelConfiguration> { azureOpenAIConfig, openAIConfig };
-```
+   ```json
+   {
+     "ServiceProviderConfigurations": [
+       {
+         "UniqueName": "OpenAI",
+         "ServiceType": "OpenAI",
+         "ApiKey": "YOUR_OPENAI_API_KEY",
+         "ModelId": "YOUR_MODEL_ID"
+       },
+       {
+         "UniqueName": "AzureOpenAI",
+         "ServiceType": "AzureOpenAI",
+         "DeploymentName": "YOUR_DEPLOYMENT_NAME",
+         "ApiKey": "YOUR_AZURE_API_KEY",
+         "Endpoint": "YOUR_ENDPOINT",
+         "ModelId": "YOUR_MODEL_ID",
+         "ServiceId": "YOUR_SERVICE_ID"
+       }
+     ]
+   }
+   ```
 
-### Advanced Usage
+3. **Retrieve a Kernel and Execute Commands**
 
-#### Registering Service-Specific Actions
+   Once the service providers are configured and registered, you can retrieve a kernel from the pool and execute commands:
 
-```csharp
-kernelPoolManager.RegisterForSpecificPreKernelCreation(typeof(OpenAIKernel), (builder, config) =>
-{
-    // Add service-specific configurations
-});
+   ```csharp
+   var kernelPoolManager = serviceProvider.GetRequiredService<IKernelPoolManager>();
 
-kernelPoolManager.RegisterForSpecificAfterKernelCreation(typeof(OpenAIKernel), (kernel, config) =>
-{
-    // Perform post-creation tasks
-});
-```
+   // Example: Getting a kernel for OpenAI
+   var kernelWrapper = await kernelPoolManager.GetKernelAsync(AIServiceProviderType.OpenAI);
 
-### Contributing
+   // Use the kernel to perform AI operations
+   var response = await kernelWrapper.Kernel.ExecuteAsync("What is Semantic Kernel?");
+   Console.WriteLine(response);
 
-We welcome contributions to the SK Pool Library! Feel free to submit issues, fork the repository, and create pull requests. Please ensure all changes are well-documented and covered by unit tests.
+   // Return the kernel to the pool after use
+   kernelWrapper.Dispose();
+   ```
 
-### License
+## Supported Providers
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- **OpenAI:** Use `OpenAIConfiguration` and `OpenAIKernelPool` to interact with OpenAI services.
+- **Azure OpenAI:** Use `AzureOpenAIConfiguration` and `AzureOpenAIKernelPool` for Azure OpenAI.
+- **HuggingFace:** Use `HuggingFaceConfiguration` and `HuggingFaceKernelPool` to integrate with HuggingFace models.
+- **Google AI:** Use `GoogleConfiguration` and `GoogleKernelPool` for Google AI services.
+- **Mistral AI:** Use `MistralAIConfiguration` and `MistralAIKernelPool` to leverage Mistral AI services.
 
-### Acknowledgments
+## Extending SemanticKernelPooling
 
-This library was inspired by the need to efficiently manage AI service connections and resource usage in high-concurrency environments. Special thanks to the developers and maintainers of the Semantic Kernel SDK for providing a robust foundation for AI model integration.
+To add a new AI service provider:
 
+1. **Create a Configuration Record:**
+
+   Define a new configuration record inheriting from `AIServiceProviderConfiguration`:
+
+   ```csharp
+   public record NewAIConfiguration : AIServiceProviderConfiguration
+   {
+       public required string ModelId { get; init; }
+       public required string ApiKey { get; init; }
+       // Additional provider-specific settings
+   }
+   ```
+
+2. **Implement a Kernel Pool:**
+
+   Implement a new kernel pool class inheriting from `AIServicePool<T>`:
+
+   ```csharp
+   class NewAIKernelPool(
+       NewAIConfiguration newAIConfiguration,
+       ILoggerFactory loggerFactory)
+       : AIServicePool<NewAIConfiguration>(newAIConfiguration)
+   {
+       protected override void RegisterChatCompletionService(IKernelBuilder kernelBuilder, NewAIConfiguration config, HttpClient? httpClient)
+       {
+           // Register the service with the kernel builder
+       }
+
+       protected override ILogger Logger { get; } = loggerFactory.CreateLogger<NewAIKernelPool>();
+   }
+   ```
+
+3. **Register the Provider:**
+
+   Extend the service collection with your new provider:
+
+   ```csharp
+   public static class ServiceExtension
+   {
+       public static void UseNewAIKernelPool(this ServiceCollection services)
+       {
+           services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
+               AIServiceProviderType.NewAI,
+               (aiServiceProviderConfiguration, loggerFactory) =>
+                   new NewAIKernelPool((NewAIConfiguration)aiServiceProviderConfiguration, loggerFactory));
+       }
+   }
+   ```
+
+## Contributing
+
+Contributions are welcome! Please fork the repository, make your changes, and submit a pull request. Ensure your code adheres to the project's coding standards and includes appropriate tests.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
+## Acknowledgments
+
+- Special thanks to the contributors of Microsoft Semantic Kernel and all integrated AI service providers.
+- Inspired by the need for efficient AI resource management in .NET applications.
+
+---
+
+By following this guide, you should have a comprehensive understanding of how to use and extend the SemanticKernelPooling library for various AI service integrations. Happy coding!
