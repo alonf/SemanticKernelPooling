@@ -18,7 +18,7 @@ public enum AIServiceProviderType
     /// <summary>
     /// Represents the Mistral AI service provider.
     /// </summary>
-    Mistral,
+    MistralAI,
 
     /// <summary>
     /// Represents the Google AI service provider.

@@ -19,6 +19,14 @@ namespace SemanticKernelPooling;
             AIServiceProviderType aiServiceProviderType,
             Func<AIServiceProviderConfiguration, ILoggerFactory, IKernelPool> kernelPoolFactory);
 
+        /// <summary>
+        /// Get the kernel pool factory for a specific AI service provider type.
+        /// </summary>
+        /// <param name="aiServiceProviderType">The pool type</param>
+        /// <returns>A kernel pool factory</returns>
+        Func<AIServiceProviderConfiguration, ILoggerFactory, IKernelPool> GetKernelPoolFactory(
+                AIServiceProviderType aiServiceProviderType);
+
 
         /// <summary>
         /// Registers a configuration reader function for a specific AI service provider type.

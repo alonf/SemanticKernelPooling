@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace SemanticKernelPooling.Connectors.HuggingFace
 {
@@ -14,7 +16,7 @@ namespace SemanticKernelPooling.Connectors.HuggingFace
         /// <summary>
         /// Registers the HuggingFace AI service provider kernel pool with the service collection.
         /// </summary>
-        /// <param name="services">The service collection to add the HuggingFace AI kernel pool to.</param>
+        /// <param name="serviceProvider">The DI service provider</param>
         /// <remarks>
         /// This method retrieves the <see cref="IKernelPoolFactoryRegistrar"/> from the service collection and uses it to 
         /// register the kernel pool factory for the HuggingFace AI service provider. It enables integration with HuggingFace's
@@ -23,12 +25,24 @@ namespace SemanticKernelPooling.Connectors.HuggingFace
         /// <exception cref="InvalidOperationException">
         /// Thrown if the service provider cannot create an instance of <see cref="IKernelPoolManager"/>.
         /// </exception>
-        public static void UseHuggingFaceKernelPool(this IServiceCollection services)
+        ///  /// <returns>The service collection</returns>
+        public static IServiceProvider UseHuggingFaceKernelPool(this IServiceProvider serviceProvider)
         {
-            services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
+            var registrar = serviceProvider.GetRequiredService<IKernelPoolFactoryRegistrar>();
+
+            // Register the kernel pool factory for HuggingFace
+            registrar.RegisterKernelPoolFactory(
                 AIServiceProviderType.HuggingFace,
                 (aiServiceProviderConfiguration, loggerFactory) =>
                     new HuggingFaceKernelPool((HuggingFaceConfiguration)aiServiceProviderConfiguration, loggerFactory));
+
+            // Register the configuration reader for HuggingFace
+            registrar.RegisterConfigurationReader(
+                AIServiceProviderType.HuggingFace,
+                configurationSection => configurationSection.Get<HuggingFaceConfiguration>()
+                                        ?? throw new InvalidOperationException("HuggingFace configuration not found."));
+
+            return serviceProvider;
         }
     }
 }

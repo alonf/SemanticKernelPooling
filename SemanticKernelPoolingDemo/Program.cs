@@ -16,14 +16,18 @@ var configuration = new ConfigurationBuilder()
         .Build();
 
 var services = new ServiceCollection();
+services.AddSingleton<IKernelPoolFactoryRegistrar, KernelPoolFactoryRegistrar>();
 services.AddLogging(configure => configure.AddConsole());
 // Register the configuration instance to make it available for dependency injection
 services.AddSingleton<IConfiguration>(configuration);
 
 services.UseSemanticKernelPooling(); // Core service pooling registration
-RegisterServicePools(services);
+
 
 var serviceProvider = services.BuildServiceProvider();
+
+RegisterServicePools();
+
 var kernelPoolManager = serviceProvider.GetRequiredService<IKernelPoolManager>();
 
 kernelPoolManager.RegisterForPreKernelCreation("math", (kernelBuilder, _, _, scopes) =>
@@ -40,7 +44,7 @@ var tasks = new List<Task>();
 
 for (int i = 0; i < 20; i++) // 4 tasks per kernel type
 {
-    tasks.Add(RunKernelTask(kernelPoolManager,  i + 1));
+    tasks.Add(RunKernelTask(i + 1));
 }
 
 
@@ -49,7 +53,7 @@ await Task.WhenAll(tasks);
 
 Console.WriteLine("All tasks completed.");
 
-async Task RunKernelTask(IKernelPoolManager kernelPoolManager, int taskId)
+async Task RunKernelTask(int taskId)
 {
     try
     {
@@ -72,11 +76,11 @@ async Task RunKernelTask(IKernelPoolManager kernelPoolManager, int taskId)
     }
 }
 
-void RegisterServicePools(IServiceCollection services)
+void RegisterServicePools()
 {
-    services.UseOpenAIKernelPool();
-    services.UseAzureOpenAIKernelPool();
-    services.UseHuggingFaceKernelPool();
-    services.UseGoogleKernelPool();
-    services.UseMistralAIKernelPool();
+    serviceProvider.UseOpenAIKernelPool();
+    serviceProvider.UseAzureOpenAIKernelPool();
+    serviceProvider.UseHuggingFaceKernelPool();
+    serviceProvider.UseGoogleKernelPool();
+    serviceProvider.UseMistralAIKernelPool();
 }
