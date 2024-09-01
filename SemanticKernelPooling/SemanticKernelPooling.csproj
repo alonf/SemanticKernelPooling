@@ -4,7 +4,28 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Title>SemanticKernelPooling Main Package</Title>
+    <Authors>Alon Fliess</Authors>
+    <Company>ZioNet</Company>
+    <Description>SemanticKernelPooling is a .NET library designed to facilitate seamless integration with multiple AI Semantic Kernel service providers, such as OpenAI, Azure OpenAI, HuggingFace, Google, Mistral AI, and others. It utilizes a kernel pooling approach to manage resources efficiently and provide robust AI capabilities in your .NET applications.</Description>
+    <PackageProjectUrl>https://github.com/alonf/SemanticKernelPooling</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/alonf/SemanticKernelPooling</RepositoryUrl>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <!-- Default version if not overridden -->
+    <PackageVersion>1.0.0</PackageVersion>
+
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />

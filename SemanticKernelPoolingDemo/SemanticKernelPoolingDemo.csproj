@@ -5,7 +5,46 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Title>SemanticKernelPooling Example</Title>
+    <Authors>Alon Fliess</Authors>
+    <Company>ZioNet</Company>
+    <Description>SemanticKernelPooling Console App example</Description>
+    <PackageProjectUrl>https://github.com/alonf/SemanticKernelPooling</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/alonf/SemanticKernelPooling</RepositoryUrl>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <!-- Default to using project references -->
+    <UsePackages>false</UsePackages>
+
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <!-- Conditionally include Project References -->
+  <ItemGroup Condition="'$(UsePackages)' == 'false'">
+    <ProjectReference Include="..\SemanticKernelPooling\SemanticKernelPooling.csproj" />
+    <ProjectReference Include="..\SemanticKernelPooling.Connectors.Google\SemanticKernelPooling.Connectors.Google.csproj" />
+    <ProjectReference Include="..\SemanticKernelPooling.Connectors.HuggingFace\SemanticKernelPooling.Connectors.HuggingFace.csproj" />
+    <ProjectReference Include="..\SemanticKernelPooling.Connectors.MistralAI\SemanticKernelPooling.Connectors.MistralAI.csproj" />
+    <ProjectReference Include="..\SemanticKernelPooling.Connectors.OpenAI\SemanticKernelPooling.Connectors.OpenAI.csproj" />
+  </ItemGroup>
+
+  <!-- Conditionally include NuGet Package References -->
+  <ItemGroup Condition="'$(UsePackages)' == 'true'">
+    <PackageReference Include="SemanticKernelPooling" Version="$(PackageVersion)" />
+    <PackageReference Include="SemanticKernelPooling.Connectors.Google" Version="$(PackageVersion)" />
+    <PackageReference Include="SemanticKernelPooling.Connectors.HuggingFace" Version="$(PackageVersion)" />
+    <PackageReference Include="SemanticKernelPooling.Connectors.MistralAI" Version="$(PackageVersion)" />
+    <PackageReference Include="SemanticKernelPooling.Connectors.OpenAI" Version="$(PackageVersion)" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.Local.json">

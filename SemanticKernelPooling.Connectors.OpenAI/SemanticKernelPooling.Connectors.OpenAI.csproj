@@ -4,14 +4,42 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Title>SemanticKernelPooling Main Package</Title>
+    <Authors>Alon Fliess</Authors>
+    <Company>ZioNet</Company>
+    <Description>Enable SemanticKernelPooling to pool OpenAI and Azure OpenAI kenels</Description>
+    <PackageProjectUrl>https://github.com/alonf/SemanticKernelPooling</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/alonf/SemanticKernelPooling</RepositoryUrl>
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <!-- Default version if not overridden -->
+    <PackageVersion>1.0.0</PackageVersion>
+    <!-- Default to using project references -->
+    <UsePackages>false</UsePackages>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.17.2" />
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <!-- Conditionally include Project References -->
+  <ItemGroup Condition="'$(UsePackages)' == 'false'">
+    <ProjectReference Include="..\SemanticKernelPooling\SemanticKernelPooling.csproj" />
+  </ItemGroup>
+
+  <!-- Conditionally include NuGet Package References -->
+  <ItemGroup Condition="'$(UsePackages)' == 'true'">
+    <PackageReference Include="SemanticKernelPooling" Version="$(PackageVersion)" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SemanticKernelPooling\SemanticKernelPooling.csproj" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.17.2" />
   </ItemGroup>
 
 </Project>
