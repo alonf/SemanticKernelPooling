@@ -182,7 +182,7 @@ public class KernelPoolManager : IKernelPoolManager
     /// <inheritdoc />
     public void RegisterForPreKernelCreation(string scope, Action<IKernelBuilder, AIServiceProviderConfiguration, KernelBuilderOptions, IReadOnlyList<string>> action)
     {
-        //go through all the pools configuration, for each, filter by usage key and register the action
+        // Go through all the pools configuration, for each, filter by usage key and register the action
         foreach (var config in AIConfigurations)
         {
             var configuredScopes = config.Scopes;
@@ -191,14 +191,13 @@ public class KernelPoolManager : IKernelPoolManager
                 continue;
 
             var serviceProviderType = config.ServiceType;
-            if (!_kernelPools.TryGetValue(serviceProviderType, out IKernelPool? kernelPool))
-            {
-                //if not, create the pool
-                kernelPool = CreateKernelPool(serviceProviderType);
-            }
 
+            if (_kernelPools.ContainsKey(serviceProviderType)) 
+                continue;
+
+            // If the pool does not exist, create the pool
+            var kernelPool = CreateKernelPool(serviceProviderType);
             var kernelPoolPreCreationRegistrar = (IKernelPoolRegistration<AIServiceProviderConfiguration>)kernelPool;
-
             kernelPoolPreCreationRegistrar.RegisterForPreKernelCreation(scope, action);
         }
     }
@@ -236,8 +235,4 @@ public class KernelPoolManager : IKernelPoolManager
             kernelPoolPreCreationRegistrar.RegisterForAfterKernelCreation(scope, action);
         }
     }
-
-    
-
-    
 }

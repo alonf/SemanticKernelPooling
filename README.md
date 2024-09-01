@@ -1,8 +1,3 @@
-Creating a comprehensive `README.md` file for your solution is crucial for guiding users on how to understand, use, and contribute to your project. Here’s a new `README.md` template tailored to your solution, which appears to involve a kernel pooling framework for integrating various AI service providers using Semantic Kernel.
-
-### README.md
-
-```markdown
 # SemanticKernelPooling
 
 SemanticKernelPooling is a .NET library designed to facilitate seamless integration with multiple AI service providers, such as OpenAI, Azure OpenAI, HuggingFace, Google, Mistral AI, and others. It utilizes a kernel pooling approach to manage resources efficiently and provide robust AI capabilities in your .NET applications.
@@ -14,6 +9,7 @@ SemanticKernelPooling is a .NET library designed to facilitate seamless integrat
 - **Extensibility:** Easily extendable to support additional AI service providers.
 - **Customizable Configuration:** Allows fine-tuning of kernel behavior and AI service integration settings.
 - **Logging Support:** Integrated with `Microsoft.Extensions.Logging` for detailed logging and diagnostics.
+- **Error Handling and Retry Logic:** Implements robust error handling using Polly for retry policies, especially useful for managing API quotas and transient errors.
 
 ## Getting Started
 
@@ -24,6 +20,7 @@ SemanticKernelPooling is a .NET library designed to facilitate seamless integrat
   - `Microsoft.Extensions.DependencyInjection`
   - `Microsoft.Extensions.Logging`
   - `Microsoft.SemanticKernel`
+  - `Polly` for advanced retry logic
 
 ### Installation
 
@@ -60,7 +57,7 @@ dotnet add package SemanticKernelPooling
 
    ```json
    {
-     "ServiceProviderConfigurations": [
+     "AIServiceProviderConfigurations": [
        {
          "UniqueName": "OpenAI",
          "ServiceType": "OpenAI",
@@ -76,6 +73,7 @@ dotnet add package SemanticKernelPooling
          "ModelId": "YOUR_MODEL_ID",
          "ServiceId": "YOUR_SERVICE_ID"
        }
+       // Add more providers as needed
      ]
    }
    ```
@@ -88,14 +86,77 @@ dotnet add package SemanticKernelPooling
    var kernelPoolManager = serviceProvider.GetRequiredService<IKernelPoolManager>();
 
    // Example: Getting a kernel for OpenAI
-   var kernelWrapper = await kernelPoolManager.GetKernelAsync(AIServiceProviderType.OpenAI);
+   using var kernelWrapper = await kernelPoolManager.GetKernelAsync(AIServiceProviderType.OpenAI);
 
    // Use the kernel to perform AI operations
    var response = await kernelWrapper.Kernel.ExecuteAsync("What is Semantic Kernel?");
    Console.WriteLine(response);
 
    // Return the kernel to the pool after use
-   kernelWrapper.Dispose();
+   ```
+
+### Advanced Usage
+
+4. **Using Retry Policies**
+
+   To handle API rate limits and transient errors, use Polly to define retry policies:
+
+   ```csharp
+   AsyncPolicy httpTimeoutAndRetryPolicy = Policy
+       .Handle<Exception>(ex => ex.IsTransientError())
+       .WaitAndRetryAsync(
+           retryCount: 6,
+           sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(new Random().Next(0, 3000)),
+           onRetry: (exception, timespan, retryCount, context) =>
+           {
+               logger.LogError($"Retry {retryCount} after {timespan.TotalSeconds} seconds due to: {exception.Message}");
+           });
+   ```
+
+5. **Adding New AI Providers**
+
+   To add support for a new AI provider, follow these steps:
+
+   - **Create a Configuration Class:** Define a new configuration class inheriting from `AIServiceProviderConfiguration`.
+
+   - **Implement a Kernel Pool Class:** Create a new kernel pool class inheriting from `AIServicePool<T>`.
+
+   - **Register the New Provider:** Add the registration method in the `ServiceExtension` class to register your new provider with the DI container.
+
+   For example, to add a new "CustomAI" provider:
+
+   ```csharp
+   public record CustomAIConfiguration : AIServiceProviderConfiguration
+   {
+       public required string ModelId { get; init; }
+       public required string ApiKey { get; init; }
+       // Additional settings...
+   }
+
+   class CustomAIKernelPool(
+       CustomAIConfiguration config,
+       ILoggerFactory loggerFactory)
+       : AIServicePool<CustomAIConfiguration>(config)
+   {
+       protected override void RegisterChatCompletionService(IKernelBuilder kernelBuilder, CustomAIConfiguration config, HttpClient? httpClient)
+       {
+           // Register service logic...
+       }
+
+       protected override ILogger Logger { get; } = loggerFactory.CreateLogger<CustomAIKernelPool>();
+   }
+
+   public static class ServiceExtension
+   {
+       public static void UseCustomAIKernelPool(this IServiceProvider serviceProvider)
+       {
+           var registrar = serviceProvider.GetRequiredService<IKernelPoolFactoryRegistrar>();
+           registrar.RegisterKernelPoolFactory(
+               AIServiceProviderType.CustomAI,
+               (aiServiceProviderConfiguration, loggerFactory) =>
+                   new CustomAIKernelPool((CustomAIConfiguration)aiServiceProviderConfiguration, loggerFactory));
+       }
+   }
    ```
 
 ## Supported Providers
@@ -105,59 +166,7 @@ dotnet add package SemanticKernelPooling
 - **HuggingFace:** Use `HuggingFaceConfiguration` and `HuggingFaceKernelPool` to integrate with HuggingFace models.
 - **Google AI:** Use `GoogleConfiguration` and `GoogleKernelPool` for Google AI services.
 - **Mistral AI:** Use `MistralAIConfiguration` and `MistralAIKernelPool` to leverage Mistral AI services.
-
-## Extending SemanticKernelPooling
-
-To add a new AI service provider:
-
-1. **Create a Configuration Record:**
-
-   Define a new configuration record inheriting from `AIServiceProviderConfiguration`:
-
-   ```csharp
-   public record NewAIConfiguration : AIServiceProviderConfiguration
-   {
-       public required string ModelId { get; init; }
-       public required string ApiKey { get; init; }
-       // Additional provider-specific settings
-   }
-   ```
-
-2. **Implement a Kernel Pool:**
-
-   Implement a new kernel pool class inheriting from `AIServicePool<T>`:
-
-   ```csharp
-   class NewAIKernelPool(
-       NewAIConfiguration newAIConfiguration,
-       ILoggerFactory loggerFactory)
-       : AIServicePool<NewAIConfiguration>(newAIConfiguration)
-   {
-       protected override void RegisterChatCompletionService(IKernelBuilder kernelBuilder, NewAIConfiguration config, HttpClient? httpClient)
-       {
-           // Register the service with the kernel builder
-       }
-
-       protected override ILogger Logger { get; } = loggerFactory.CreateLogger<NewAIKernelPool>();
-   }
-   ```
-
-3. **Register the Provider:**
-
-   Extend the service collection with your new provider:
-
-   ```csharp
-   public static class ServiceExtension
-   {
-       public static void UseNewAIKernelPool(this IServiceCollection services)
-       {
-           services.GetKernelPoolFactoryRegistrar().RegisterKernelPoolFactory(
-               AIServiceProviderType.NewAI,
-               (aiServiceProviderConfiguration, loggerFactory) =>
-                   new NewAIKernelPool((NewAIConfiguration)aiServiceProviderConfiguration, loggerFactory));
-       }
-   }
-   ```
+- **Custom Providers:** Easily extend to support other providers by following the extensibility guidelines.
 
 ## Contributing
 
@@ -171,7 +180,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - Special thanks to the contributors of Microsoft Semantic Kernel and all integrated AI service providers.
 - Inspired by the need for efficient AI resource management in .NET applications.
-
----
-
-By following this guide, you should have a comprehensive understanding of how to use and extend the SemanticKernelPooling library for various AI service integrations. Happy coding!

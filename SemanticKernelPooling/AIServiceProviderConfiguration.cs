@@ -45,7 +45,7 @@ public abstract record AIServiceProviderConfiguration
     /// A scope is used to group kernel providers that share common characteristics or usage scenarios.
     /// Multiple scopes can be assigned to a single configuration to support complex grouping and selection logic.
     /// </remarks>
-    public List<string> Scopes { get; set; } = new List<string>();
+    public List<string> Scopes { get; set; } = [];
 
     /// <summary>
     /// Gets or initializes the deployment text embedding used for text processing or embedding operations.
