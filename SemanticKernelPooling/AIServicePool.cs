@@ -39,7 +39,9 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     private TServiceProviderConfiguration AIServiceProviderAIConfiguration { get; }
     private int CurrentNumberOfKernels { get; } = 0;
     private SemaphoreSlim Semaphore { get; }
-    private string UniqueName => AIServiceProviderAIConfiguration.UniqueName;
+
+    ///<inheritdoc />
+    public string UniqueName => AIServiceProviderAIConfiguration.UniqueName;
 
     /// <summary>
     /// Registers the chat completion service with the specified kernel builder.

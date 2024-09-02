@@ -19,6 +19,11 @@ public interface IKernelPool
     void ReturnKernel(Kernel kernel);
 
     /// <summary>
+    /// The unique name of the kernel pool.
+    /// </summary>
+    string UniqueName { get; }
+
+    /// <summary>
     /// The list of scopes that this kernel pool supports.
     /// </summary>
     IReadOnlyList<string> Scopes { get; }
@@ -27,4 +32,5 @@ public interface IKernelPool
     /// The type of AI service provider that this kernel pool supports.
     /// </summary>
     AIServiceProviderType ServiceProviderType { get; }
+
 }
