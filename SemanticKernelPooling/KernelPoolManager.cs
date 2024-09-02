@@ -16,6 +16,7 @@ public class KernelPoolManager : IKernelPoolManager
     private readonly ILogger<KernelPoolManager> _logger;
     private readonly ConcurrentDictionary<string, IKernelPool> _kernelPools = new();
     private readonly ILoggerFactory _loggerFactory;
+
     // Dictionary to maintain round-robin indices for each scope
     private readonly ConcurrentDictionary<string, int> _scopeIndices = new();
     private readonly IConfiguration _configuration;

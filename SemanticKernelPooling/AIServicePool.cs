@@ -35,7 +35,7 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     private readonly List<Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions, IReadOnlyList<string>>> _beforeKernelBuildScopedInitializers = new();
     private readonly List<Action<Kernel, TServiceProviderConfiguration, IReadOnlyList<string>>> _afterKernelBuildScopedInitializers = new();
 
-    private readonly ConcurrentBag<Kernel> _kernels = new();
+    private readonly ConcurrentQueue<Kernel> _kernels = new();
     private TServiceProviderConfiguration AIServiceProviderAIConfiguration { get; }
     private int CurrentNumberOfKernels { get; } = 0;
     private SemaphoreSlim Semaphore { get; }
@@ -130,7 +130,7 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
 
         KernelWrapper kernelWrapper;
 
-        if (_kernels.TryTake(out var kernel))
+        if (_kernels.TryDequeue(out var kernel))
         {
             kernelWrapper = new KernelWrapper(kernel, this, Logger);
         }
@@ -188,7 +188,7 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     /// <param name="kernel">The kernel to return to the pool.</param>
     public void ReturnKernel(Kernel kernel)
     {
-        _kernels.Add(kernel); // Add the kernel back to the pool
+        _kernels.Enqueue(kernel); // Add the kernel back to the pool
         var freeKernels = Interlocked.Increment(ref _freeKernelCount);
 
         Logger.LogInformation("[{serviceType},{uniqueName} Pool]: Kernel returned to the pool. Free kernels: {kernelAvailability}.",
