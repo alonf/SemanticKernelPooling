@@ -8,9 +8,9 @@ namespace SemanticKernelPooling;
 public interface IKernelPoolManager
 {
     /// <summary>
-    /// Asynchronously retrieves a kernel wrapper from the pool for a specified AI service provider type.
+    /// Asynchronously retrieves a kernel wrapper from the pool for a specified AI service by its unique name.
     /// </summary>
-    /// <param name="aiServiceProviderType">The type of the AI service provider to get the kernel for.</param>
+    /// <param name="uniqueName">The kernel unique name</param>
     /// <returns>
     /// A task that represents the asynchronous operation. The task result contains a <see cref="KernelWrapper"/> 
     /// that provides access to the kernel instance and its associated metadata.
@@ -19,14 +19,14 @@ public interface IKernelPoolManager
     /// Thrown if no configuration is found for the specified AI service provider type 
     /// or if the kernel pool cannot be created.
     /// </exception>
-    Task<KernelWrapper> GetKernelAsync(AIServiceProviderType aiServiceProviderType);
+    Task<KernelWrapper> GetKernelByNameAsync(string uniqueName);
 
     /// <summary>
     /// Asynchronously retrieves a kernel wrapper from the pool for a service provider with a predefined scope.
     /// </summary>
     /// <param name="scope">The scope name to filter the kernel pool</param>
     /// <returns>A kernel wrapper</returns>
-    Task<KernelWrapper> GetKernelAsync(string scope);
+    Task<KernelWrapper> GetKernelByScopeAsync(string scope);
 
     /// <summary>
     /// Registers an action to be executed before a kernel is created. This action allows for 

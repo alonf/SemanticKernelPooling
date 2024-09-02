@@ -23,11 +23,13 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     protected AIServicePool(TServiceProviderConfiguration aiServiceProviderAIConfiguration)
     {
         AIServiceProviderAIConfiguration = aiServiceProviderAIConfiguration;
-        Semaphore = new SemaphoreSlim(1, aiServiceProviderAIConfiguration.InstanceCount);
+        Semaphore = new SemaphoreSlim(aiServiceProviderAIConfiguration.InstanceCount, aiServiceProviderAIConfiguration.InstanceCount);
         Scopes = aiServiceProviderAIConfiguration.Scopes;
         ServiceProviderType = aiServiceProviderAIConfiguration.ServiceType;
+        _freeKernelCount = aiServiceProviderAIConfiguration.InstanceCount;
     }
 
+    private volatile int _freeKernelCount;
     private readonly List<Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions>> _beforeKernelBuildInitializers = new();
     private readonly List<Action<Kernel, TServiceProviderConfiguration>> _afterKernelBuildInitializers = new();
     private readonly List<Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions, IReadOnlyList<string>>> _beforeKernelBuildScopedInitializers = new();
@@ -37,6 +39,7 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     private TServiceProviderConfiguration AIServiceProviderAIConfiguration { get; }
     private int CurrentNumberOfKernels { get; } = 0;
     private SemaphoreSlim Semaphore { get; }
+    private string UniqueName => AIServiceProviderAIConfiguration.UniqueName;
 
     /// <summary>
     /// Registers the chat completion service with the specified kernel builder.
@@ -108,19 +111,22 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     public async Task<KernelWrapper> GetKernelAsync()
     {
         var enterWaitTime = DateTime.Now;
-        Logger.LogInformation("Waiting for a kernel to be available in the pool.");
+        Logger.LogInformation("[{serviceType},{uniqueName} Pool]: Waiting for a kernel to be available in the pool,"
+            , ServiceProviderType, UniqueName);
 
         var result = await Semaphore.WaitAsync(TimeSpan.FromSeconds(AIServiceProviderAIConfiguration.MaxWaitForKernelInSeconds)).ConfigureAwait(false);
 
         if (!result)
         {
-            Logger.LogError("No kernel available in the pool after waiting for {waitTime} ms. Free kernels: {kernelAvailability}",
-                (DateTime.Now - enterWaitTime).TotalMilliseconds, _kernels.Count + Semaphore.CurrentCount);
-            throw new InvalidOperationException("No available kernels in the pool after waiting.");
+            Logger.LogError("[{serviceType},{uniqueName} Pool]: No kernel available in the pool after waiting for {waitTime} ms. Free kernels: 0",
+                ServiceProviderType, UniqueName, (DateTime.Now - enterWaitTime).TotalMilliseconds);
+            throw new InvalidOperationException("[{serviceType} Pool]: No available kernels in the pool after waiting.");
         }
 
-        Logger.LogInformation("Kernel available in the pool after waiting for {waitTime} ms. Free kernels: {kernelAvailability}",
-            (DateTime.Now - enterWaitTime).TotalMilliseconds, _kernels.Count + Semaphore.CurrentCount);
+        var freeKernels = Interlocked.Decrement(ref _freeKernelCount);
+
+        Logger.LogInformation("[{serviceType},{uniqueName} Pool]: Kernel available in the pool after waiting for {waitTime} ms. Free kernels: {kernelAvailability}",
+            ServiceProviderType, UniqueName, (DateTime.Now - enterWaitTime).TotalMilliseconds, freeKernels);
 
         KernelWrapper kernelWrapper;
 
@@ -131,8 +137,8 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
         else
         {
             var newKernel = CreateKernel();
-            Logger.LogInformation("Kernel created. Total created kernels: {totalCreatedKernels}",
-                AIServiceProviderAIConfiguration.InstanceCount - Semaphore.CurrentCount);
+            Logger.LogInformation("[{serviceType},{uniqueName} Pool]: Kernel created. Total created kernels: {totalCreatedKernels}",
+                ServiceProviderType, UniqueName, _kernels.Count + AIServiceProviderAIConfiguration.InstanceCount - Semaphore.CurrentCount);
 
             kernelWrapper = new KernelWrapper(newKernel, this, Logger);
         }
@@ -183,8 +189,10 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     public void ReturnKernel(Kernel kernel)
     {
         _kernels.Add(kernel); // Add the kernel back to the pool
+        var freeKernels = Interlocked.Increment(ref _freeKernelCount);
 
-        Logger.LogInformation("Kernel returned to the pool. Free kernels: {kernelAvailability}", _kernels.Count + Semaphore.CurrentCount);
+        Logger.LogInformation("[{serviceType},{uniqueName} Pool]: Kernel returned to the pool. Free kernels: {kernelAvailability}.",
+            ServiceProviderType, UniqueName, freeKernels);
         Semaphore.Release();    // Release the semaphore slot
     }
 

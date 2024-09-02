@@ -18,7 +18,6 @@ var configuration = new ConfigurationBuilder()
         .Build();
 
 var services = new ServiceCollection();
-services.AddSingleton<IKernelPoolFactoryRegistrar, KernelPoolFactoryRegistrar>();
 services.AddLogging(configure => configure.AddConsole());
 // Register the configuration instance to make it available for dependency injection
 services.AddSingleton<IConfiguration>(configuration);
@@ -82,7 +81,7 @@ async Task RunKernelTaskAsync(int taskId)
     try
     {
         Console.WriteLine($"[Task {taskId}] Fetching kernel for scope: math");
-        using var kernelWrapper = await kernelPoolManager.GetKernelAsync("math").ConfigureAwait(false);
+        using var kernelWrapper = await kernelPoolManager.GetKernelByScopeAsync("math").ConfigureAwait(false);
 
         // Define an inline prompt directly in the code
         string prompt = "Solve: 2 + 2 * 2 =";
