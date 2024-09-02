@@ -29,6 +29,16 @@ public interface IKernelPoolManager
     Task<KernelWrapper> GetKernelByScopeAsync(string scope);
 
     /// <summary>
+    /// Asynchronously retrieves a kernel wrapper from the pool for a service provider by the provider type.
+    /// <remarks>If there are multiple service type configuration, the first pool from this type will be used</remarks>
+    /// </summary>
+    /// <param name="aiServiceProviderType">The provider type</param>
+    /// <returns>A kernel wrapper</returns>
+    Task<KernelWrapper> GetKernelAsync(AIServiceProviderType aiServiceProviderType);
+
+
+
+    /// <summary>
     /// Registers an action to be executed before a kernel is created. This action allows for 
     /// customization of the kernel building process.
     /// </summary>

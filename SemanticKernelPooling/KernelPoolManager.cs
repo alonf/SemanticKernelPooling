@@ -107,7 +107,7 @@ public class KernelPoolManager : IKernelPoolManager
     /// <inheritdoc />
     public async Task<KernelWrapper> GetKernelByNameAsync(string uniqueName)
     {
-        //gwt the service type configuration
+        //get the service configuration
         var config = AIConfigurations.First(c => c.UniqueName == uniqueName);
         if (config == null)
             throw new InvalidOperationException($"No configuration found for kernel pool name {uniqueName}");
@@ -134,39 +134,19 @@ public class KernelPoolManager : IKernelPoolManager
         return kernelWrapper;
     }
 
+    /// <inheritdoc />
+    public async Task<KernelWrapper> GetKernelAsync(AIServiceProviderType aiServiceProviderType)
+    {
+        //get the service configuration by type
+        var config = AIConfigurations.First(c => c.ServiceType == aiServiceProviderType);
+        if (config == null)
+            throw new InvalidOperationException($"No configuration found for kernel pool type {aiServiceProviderType}");
 
-    //private IKernelPoolRegistration<TServiceProviderConfiguration> GetKernelPoolRegistrar<TServiceProviderConfiguration>(
-    //    TServiceProviderConfiguration serviceProviderConfiguration)
-    //    where TServiceProviderConfiguration : AIServiceProviderConfiguration
-    //{
-    //    //get the pool
-    //    if (!_kernelPools.TryGetValue(serviceProviderConfiguration.UniqueName, out IKernelPool? kernelPool))
-    //    {
-    //        //if not, create the pool
-    //        kernelPool = CreateKernelPool(serviceProviderConfiguration);
-    //    }
+        var kernelWrapper = await GetKernelAsync(config);
 
-    //    var kernelPoolPreCreationRegistrar = (IKernelPoolRegistration<TServiceProviderConfiguration>)kernelPool;
+        return kernelWrapper;
+    }
 
-    //    return kernelPoolPreCreationRegistrar;
-    //}
-
-    ///// <summary>
-    ///// Creates a new kernel pool for the specified AI service provider type using the registered factory method.
-    ///// </summary>
-    ///// <param name="aiServiceProviderType">The type of the AI service provider.</param>
-    ///// <returns>An instance of <see cref="IKernelPool"/> created using the factory method.</returns>
-    ///// <exception cref="KeyNotFoundException">Thrown if no factory method is registered for the specified service type.</exception>
-    //private IKernelPool CreateKernelPool(AIServiceProviderType aiServiceProviderType)
-    //{
-    //    var config = AIConfigurations.FirstOrDefault(c => c.ServiceType == aiServiceProviderType);
-    //    if (config == null)
-    //        throw new InvalidOperationException($"No configuration found for service provider type {aiServiceProviderType}");
-
-    //    var kernelPool = CreateKernelPool(config);
-
-    //    return kernelPool;
-    //}
 
     /// <inheritdoc />
     public void RegisterForPreKernelCreation<TServiceProviderConfiguration>(Action<IKernelBuilder, TServiceProviderConfiguration, KernelBuilderOptions> action)
