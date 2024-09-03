@@ -43,13 +43,13 @@ jobs:
           fi
 
       - name: Restore dependencies
-        run: dotnet restore ${{ matrix.package-path }}
+        run: dotnet restore ${{ matrix.package-path }} -p:UsePackages=true
 
       - name: Build package
-        run: dotnet build ${{ matrix.package-path }} --configuration Release
+        run: dotnet build ${{ matrix.package-path }} --configuration Release -p:UsePackages=true
 
       - name: Pack package
-        run: dotnet pack ${{ matrix.package-path }} --configuration Release -p:PackageVersion=${{ steps.get-version.outputs.package_version }} /p:PackageReleaseNotes="See https://raw.githubusercontent.com/alonf/SemanticKernelPooling/master/README.md" --output ./nupkgs
+        run: dotnet pack ${{ matrix.package-path }} --configuration Release -p:UsePackages=true -p:PackageVersion=${{ steps.get-version.outputs.package_version }} /p:PackageReleaseNotes="See https://raw.githubusercontent.com/alonf/SemanticKernelPooling/master/README.md" --output ./nupkgs
 
       - name: Debug Log Packed Packages
         run: ls -l ./nupkgs
