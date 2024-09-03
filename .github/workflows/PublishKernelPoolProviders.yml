@@ -54,12 +54,12 @@ jobs:
       - name: Debug Log Packed Packages
         run: ls -l ./nupkgs
 
-      - name: Publish package
+      - name: Publish packages with retry
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           for pkg in ./nupkgs/*.nupkg; do
-            dotnet nuget push "$pkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json || echo "Failed to push $pkg, will retry...";
+            for i in {1..3}; do
+              dotnet nuget push "$pkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json && break || echo "Failed to push $pkg, attempt $i, retrying in 30 seconds..." && sleep 30;
+            done
           done
-          retry: 3
-          retry_delay: 30
