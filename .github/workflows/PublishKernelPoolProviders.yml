@@ -1,0 +1,65 @@
+name: build-kernel-pool-providers-packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: 'Package version'
+        required: false
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        package-path:
+          - './SemanticKernelPooling.Google/SemanticKernelPooling.Google.csproj'
+          - './SemanticKernelPooling.HuggingFace/SemanticKernelPooling.HuggingFace.csproj'
+          - './SemanticKernelPooling.MistralAI/SemanticKernelPooling.MistralAI.csproj'
+          - './SemanticKernelPooling.OpenAI/SemanticKernelPooling.OpenAI.csproj'
+
+    steps:
+      - name: Wait for NuGet packages to be available
+        run: sleep 200 # Delays for 200 seconds, or 5 minutes
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Determine Package Version
+        id: get-version
+        run: |
+          if [ "${{ github.event.release.tag_name }}" ]; then
+              echo "package_version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+              echo "package_version=${{ github.event.inputs.package_version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ matrix.package-path }}
+
+      - name: Build package
+        run: dotnet build ${{ matrix.package-path }} --configuration Release
+
+      - name: Pack package
+        run: dotnet pack ${{ matrix.package-path }} --configuration Release -p:PackageVersion=${{ steps.get-version.outputs.package_version }} /p:PackageReleaseNotes="See https://raw.githubusercontent.com/alonf/SemanticKernelPooling/master/README.md" --output ./nupkgs
+
+      - name: Debug Log Packed Packages
+        run: ls -l ./nupkgs
+
+      - name: Publish package
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          for pkg in ./nupkgs/*.nupkg; do
+            dotnet nuget push "$pkg" --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json || echo "Failed to push $pkg, will retry...";
+          done
+          retry: 3
+          retry_delay: 30
