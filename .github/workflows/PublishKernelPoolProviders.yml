@@ -20,7 +20,6 @@ jobs:
           - './SemanticKernelPooling.Connectors.HuggingFace/SemanticKernelPooling.Connectors.HuggingFace.csproj'
           - './SemanticKernelPooling.Connectors.MistralAI/SemanticKernelPooling.Connectors.MistralAI.csproj'
           - './SemanticKernelPooling.Connectors.OpenAI/SemanticKernelPooling.Connectors.OpenAI.csproj'
-    steps:
 
     steps:
       - name: Wait for NuGet packages to be available
