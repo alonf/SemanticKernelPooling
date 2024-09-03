@@ -23,10 +23,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
+    <None Include="../README.md" Pack="true" PackagePath="/" />
+    <None Include="../assets/package-icon.png" Pack="true" PackagePath="assets/" />
   </ItemGroup>
 
   <!-- Conditionally include Project References -->
