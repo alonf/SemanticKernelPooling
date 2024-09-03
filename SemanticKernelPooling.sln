@@ -21,6 +21,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernelPooling.Conne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernelPoolingDemo", "SemanticKernelPoolingDemo\SemanticKernelPoolingDemo.csproj", "{EF7CC525-73D8-4416-A52F-D8C44BEA539B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{6ACB62DC-A0F8-402C-A51F-CE9B547D8FAB}"
+	ProjectSection(SolutionItems) = preProject
+		assets\package-icon.png = assets\package-icon.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
