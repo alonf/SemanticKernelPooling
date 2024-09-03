@@ -29,8 +29,9 @@ jobs:
             else
                 echo "package_version=${{ github.event.inputs.package_version }}" >> $GITHUB_OUTPUT
             fi
+            pwd
 
-      - name: Restore dependencies for main package
+      - name: Restore dependencies for the main package
         run: dotnet restore ./SemanticKernelPooling/SemanticKernelPooling.csproj
 
       - name: Build main package
