@@ -52,12 +52,11 @@ jobs:
     needs: build-main-package
     strategy:
       matrix:
-        package-path: [
-          './SemanticKernelPooling.Google/SemanticKernelPooling.Google.csproj',
-          './SemanticKernelPooling.HuggingFace/SemanticKernelPooling.HuggingFace.csproj',
-          './SemanticKernelPooling.MistralAI/SemanticKernelPooling.MistralAI.csproj',
-          './SemanticKernelPooling.OpenAI/SemanticKernelPooling.OpenAI.csproj'
-        ]
+        package-path: 
+          - './SemanticKernelPooling.Google/SemanticKernelPooling.Google.csproj'
+          - './SemanticKernelPooling.HuggingFace/SemanticKernelPooling.HuggingFace.csproj'
+          - './SemanticKernelPooling.MistralAI/SemanticKernelPooling.MistralAI.csproj'
+          - './SemanticKernelPooling.OpenAI/SemanticKernelPooling.OpenAI.csproj'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -74,9 +73,13 @@ jobs:
         run: dotnet build ${{ matrix.package-path }} --configuration Release
 
       - name: Pack package
-        run: dotnet pack ${{ matrix.package-path }} --configuration Release -p:PackageVersion=${{ needs.build-main-package.outputs.get-version.package_version }} --output ./nupkgs
+        run: dotnet pack ${{ matrix.package-path }} --configuration Release -p:PackageVersion=${{ needs.build-main-package.outputs.package_version }} --output ./nupkgs
+
+      - name: Debug Log Packed Packages
+        run: ls -l ./nupkgs
 
       - name: Publish package
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: dotnet nuget push ./nupkgs/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
+        
