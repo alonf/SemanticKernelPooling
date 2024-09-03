@@ -17,7 +17,7 @@
     <EnableNETAnalyzers>True</EnableNETAnalyzers>
     <!-- Default version if not overridden -->
     <PackageVersion>1.0.0</PackageVersion>
-    <PackageIcon>../assets/package-icon.png</PackageIcon>
+    <PackageIcon>./assets/package-icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
