@@ -19,13 +19,14 @@
     <PackageVersion>1.0.0</PackageVersion>
     <!-- Default to using project references -->
     <UsePackages>false</UsePackages>
-    <PackageIcon>../assets/package-icon.png</PackageIcon>
+    <PackageIcon>assets/package-icon.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="../README.md" Pack="true" PackagePath="/" />
     <None Include="../assets/package-icon.png" Pack="true" PackagePath="assets/" />
   </ItemGroup>
+
   <!-- Conditionally include Project References -->
   <ItemGroup Condition="'$(UsePackages)' == 'false'">
     <ProjectReference Include="..\SemanticKernelPooling\SemanticKernelPooling.csproj" />
