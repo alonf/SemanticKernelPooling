@@ -16,10 +16,11 @@ jobs:
     strategy:
       matrix:
         package-path:
-          - './SemanticKernelPooling.Connectors.Google/SemanticKernelPooling.Google.csproj'
-          - './SemanticKernelPooling.Connectors.HuggingFace/SemanticKernelPooling.HuggingFace.csproj'
-          - './SemanticKernelPooling.Connectors.MistralAI/SemanticKernelPooling.MistralAI.csproj'
-          - './SemanticKernelPooling.Connectors.OpenAI/SemanticKernelPooling.OpenAI.csproj'
+          - './SemanticKernelPooling.Connectors.Google/SemanticKernelPooling.Connectors.Google.csproj'
+          - './SemanticKernelPooling.Connectors.HuggingFace/SemanticKernelPooling.Connectors.HuggingFace.csproj'
+          - './SemanticKernelPooling.Connectors.MistralAI/SemanticKernelPooling.Connectors.MistralAI.csproj'
+          - './SemanticKernelPooling.Connectors.OpenAI/SemanticKernelPooling.Connectors.OpenAI.csproj'
+    steps:
 
     steps:
       - name: Wait for NuGet packages to be available
