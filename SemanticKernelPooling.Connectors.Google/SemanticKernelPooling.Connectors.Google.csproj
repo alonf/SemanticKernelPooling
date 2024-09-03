@@ -19,7 +19,7 @@
     <PackageVersion>1.0.0</PackageVersion>
     <!-- Default to using project references -->
     <UsePackages>false</UsePackages>
-    <PackageIcon>assets/package-icon.png</PackageIcon>
+    <PackageIcon>../assets/package-icon.png</PackageIcon>
 
   </PropertyGroup>
 
