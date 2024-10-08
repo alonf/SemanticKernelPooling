@@ -6,16 +6,26 @@ namespace SemanticKernelPooling;
 public static class SemanticKernelPoolingServiceExtensions
 {
     /// <summary>
-    /// Registers the Semantic Kernel Pooling services and all configured AI service providers.
+    /// Registers the Semantic Kernel Pooling services and all configured AI service providers 
+    /// with a specified lifetime (Singleton, Scoped, or Transient). Singleton by default
     /// </summary>
     /// <param name="services">The service collection to add the services to.</param>
+    /// <param name="lifetime">
+    /// Specifies the service lifetime for the Semantic Kernel Pooling services.
+    /// </param>
     /// <returns>The updated service collection.</returns>
-    // ReSharper disable once UnusedMember.Global
-    public static IServiceCollection UseSemanticKernelPooling(this IServiceCollection services)
+    /// <example>
+    /// This example demonstrates how to use the method to register services with different lifetimes:
+    /// <code>
+    /// services.UseSemanticKernelPooling(ServiceLifetime.Singleton);   // Register as Singleton
+    /// services.UseSemanticKernelPooling(ServiceLifetime.Scoped);      // Register as Scoped
+    /// services.UseSemanticKernelPooling(ServiceLifetime.Transient);   // Register as Transient
+    /// </code>
+    /// </example>
+    public static IServiceCollection UseSemanticKernelPooling(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
-        // Register the KernelPoolManager as a singleton
-        services.AddSingleton<IKernelPoolManager, KernelPoolManager>();
-        services.AddSingleton<IKernelPoolFactoryRegistrar, KernelPoolFactoryRegistrar>();
+        services.Add(new(typeof(IKernelPoolManager), typeof(KernelPoolManager), lifetime));
+        services.Add(new(typeof(IKernelPoolFactoryRegistrar), typeof(KernelPoolFactoryRegistrar), lifetime));
 
         return services;
     }
