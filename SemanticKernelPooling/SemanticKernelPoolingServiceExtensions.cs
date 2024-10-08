@@ -25,7 +25,7 @@ public static class SemanticKernelPoolingServiceExtensions
     public static IServiceCollection UseSemanticKernelPooling(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
     {
         services.Add(new(typeof(IKernelPoolManager), typeof(KernelPoolManager), lifetime));
-        services.Add(new(typeof(IKernelPoolFactoryRegistrar), typeof(KernelPoolFactoryRegistrar), lifetime));
+        services.AddSingleton<IKernelPoolFactoryRegistrar, KernelPoolFactoryRegistrar>();
 
         return services;
     }
