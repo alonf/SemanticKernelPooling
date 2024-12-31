@@ -39,14 +39,23 @@ public class MockHttpMessageHandler : HttpMessageHandler
         CancellationToken cancellationToken)
     {
         var requestKey = CreateRequestKey(request);
-        _logger.LogInformation("Mock HTTP handler processing request for: {RequestKey}", requestKey);
+        _logger.LogInformation("Mock HTTP handler received request:");
+        _logger.LogInformation("  Method: {Method}", request.Method);
+        _logger.LogInformation("  URI: {URI}", request.RequestUri);
+        _logger.LogInformation("  Generated Key: {RequestKey}", requestKey);
+        _logger.LogInformation("Available mock response keys:");
+        foreach (var key in _responses.Keys)
+        {
+            _logger.LogInformation("  {Key}", key);
+        }
 
         if (_responses.TryGetValue(requestKey, out var mockResponse))
         {
+            _logger.LogInformation("Found matching mock response");
             var response = new HttpResponseMessage
             {
                 StatusCode = mockResponse.StatusCode,
-                Content = new StringContent(mockResponse.Content)
+                Content = new StringContent(mockResponse.Content, System.Text.Encoding.UTF8, "application/json")
             };
 
             foreach (var header in mockResponse.Headers)
@@ -57,8 +66,13 @@ public class MockHttpMessageHandler : HttpMessageHandler
             return Task.FromResult(response);
         }
 
-        _logger.LogWarning("No mock response found for request: {RequestKey}", requestKey);
+        _logger.LogWarning("No mock response found for request");
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+    }
+
+    private string CreateRequestKey(HttpRequestMessage request)
+    {
+        return $"{request.Method}:{request.RequestUri?.PathAndQuery}";
     }
 
     private Dictionary<string, MockResponse> LoadMockResponses(string path)
@@ -86,10 +100,5 @@ public class MockHttpMessageHandler : HttpMessageHandler
         }
 
         return responses;
-    }
-
-    private string CreateRequestKey(HttpRequestMessage request)
-    {
-        return $"{request.Method}:{request.RequestUri?.PathAndQuery}";
     }
 }
