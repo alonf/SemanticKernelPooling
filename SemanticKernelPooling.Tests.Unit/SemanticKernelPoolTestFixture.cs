@@ -41,12 +41,12 @@ public class SemanticKernelPoolTestFixture : IDisposable
     /// <summary>
     /// The scope used for test configurations.
     /// </summary>
-    public const string TestScope = "test-scope";
+    public string TestScope = "test-scope";
 
     /// <summary>
     /// The size of the kernel pool for testing.
     /// </summary>
-    public const int PoolSize = 2;
+    public int PoolSize = 2;
 
     /// <summary>
     /// The mock deployment name used in test configurations.
@@ -63,7 +63,7 @@ public class SemanticKernelPoolTestFixture : IDisposable
         InitializeServices();
     }
 
-    private void InitializeServices()
+    public void InitializeServices()
     {
         var services = new ServiceCollection();
 
