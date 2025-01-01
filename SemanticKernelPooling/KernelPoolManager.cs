@@ -109,7 +109,7 @@ public class KernelPoolManager : IKernelPoolManager
     public async Task<KernelWrapper> GetKernelByNameAsync(string uniqueName)
     {
         //get the service configuration
-        var config = AIConfigurations.First(c => c.UniqueName == uniqueName);
+        var config = AIConfigurations.FirstOrDefault(c => c.UniqueName == uniqueName);
         if (config == null)
             throw new InvalidOperationException($"No configuration found for kernel pool name {uniqueName}");
 
