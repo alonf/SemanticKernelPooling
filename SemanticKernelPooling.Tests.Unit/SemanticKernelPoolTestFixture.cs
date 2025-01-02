@@ -41,7 +41,8 @@ public class SemanticKernelPoolTestFixture : IDisposable
     /// <summary>
     /// The scope used for test configurations.
     /// </summary>
-    public string TestScope = "test-scope";
+    public string TestScope1 = "test_scope_1";
+    public string TestScope2 = "test_scope_2";
 
     /// <summary>
     /// The size of the kernel pool for testing.

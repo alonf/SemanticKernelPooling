@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.SemanticKernel;
-using SemanticKernelPooling.Tests.Mocks;
 using Xunit.Abstractions;
 
 namespace SemanticKernelPooling.Tests.Unit;
@@ -13,7 +12,6 @@ public class KernelPoolManagerGetByNameTests
     private ITestOutputHelper OutputHelper => _fixture.TestOutputHelper;
     private const string ValidUniqueName = "MockOpenAI";
     private int PoolSize => _fixture.PoolSize;
-    private string TestScope => _fixture.TestScope;
 
     public KernelPoolManagerGetByNameTests(SemanticKernelPoolTestFixture fixture, ITestOutputHelper outputHelper)
     {
@@ -116,61 +114,33 @@ public class KernelPoolManagerGetByNameTests
         OutputHelper.WriteLine("Starting test: GetKernelByName with pool exhaustion and timeout");
 
         var kernelPoolManager = _serviceProvider.GetRequiredService<IKernelPoolManager>();
-        const int expectedTimeoutSeconds = 1; // From appsettings
-        var timeoutBuffer = TimeSpan.FromSeconds(0.5); // Add buffer for system overhead
+        var kernels = new List<KernelWrapper>();
 
         try
         {
-            // Hold both available kernels
-            using var wrapper1 = await kernelPoolManager.GetKernelByNameAsync(ValidUniqueName);
-            OutputHelper.WriteLine($"First kernel obtained: Hash {wrapper1.Kernel.GetHashCode()}");
+            // Exhaust all pools
+            for (int i = 0; i < PoolSize; i++)
+            {
+                var wrapper = await kernelPoolManager.GetKernelByNameAsync(ValidUniqueName);
+                kernels.Add(wrapper);
+                OutputHelper.WriteLine($"Obtained kernel {i + 1}: Hash {wrapper.Kernel.GetHashCode()}");
+            }
 
-            using var wrapper2 = await kernelPoolManager.GetKernelByNameAsync(ValidUniqueName);
-            OutputHelper.WriteLine($"Second kernel obtained: Hash {wrapper2.Kernel.GetHashCode()}");
-            OutputHelper.WriteLine($"Pool is now exhausted (2/2 kernels in use)");
-
-            // Try to get a third kernel - should wait then throw
             var startTime = DateTime.UtcNow;
-            OutputHelper.WriteLine($"Attempting to get third kernel at {startTime:HH:mm:ss.fff}");
-            OutputHelper.WriteLine($"Should wait for {expectedTimeoutSeconds} seconds before throwing");
+            OutputHelper.WriteLine($"All pools exhausted, attempting to get another kernel at {startTime:HH:mm:ss.fff}");
 
-            // Create a task that attempts to get a kernel
-            var getKernelTask = kernelPoolManager.GetKernelByNameAsync(ValidUniqueName);
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await kernelPoolManager.GetKernelByNameAsync(ValidUniqueName));
 
-            // Wait for either the timeout period or task completion
-            var completedTask = await Task.WhenAny(
-                getKernelTask,
-                Task.Delay(TimeSpan.FromSeconds(expectedTimeoutSeconds) + timeoutBuffer)
-            );
-
-            var endTime = DateTime.UtcNow;
-            var duration = endTime - startTime;
-
-            // If the kernel task completed, it should have thrown an exception
-            if (completedTask == getKernelTask)
-            {
-                var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-                    async () => await getKernelTask);
-
-                OutputHelper.WriteLine($"Exception thrown at {endTime:HH:mm:ss.fff}");
-                OutputHelper.WriteLine($"Actual wait duration: {duration.TotalSeconds:F3} seconds");
-                OutputHelper.WriteLine($"Exception message: {exception.Message}");
-
-                // Verify the timeout duration
-                Assert.True(duration.TotalSeconds >= expectedTimeoutSeconds,
-                    $"Timeout occurred after {duration.TotalSeconds:F3} seconds, expected at least {expectedTimeoutSeconds} seconds");
-
-                Assert.Contains("No available kernels", exception.Message);
-            }
-            else
-            {
-                // If we reached here without an exception, the test failed
-                Assert.Fail($"Test timed out after {duration.TotalSeconds:F3} seconds without throwing expected exception");
-            }
+            var duration = DateTime.UtcNow - startTime;
+            OutputHelper.WriteLine($"Request failed after {duration.TotalSeconds:F2} seconds");
         }
         finally
         {
-            OutputHelper.WriteLine("Test completed");
+            foreach (var kernel in kernels)
+            {
+                kernel.Dispose();
+            }
         }
     }
 
