@@ -61,7 +61,13 @@ public abstract class AIServicePool<TServiceProviderConfiguration> : IKernelPool
     {
         var kernelBuilder = Kernel.CreateBuilder();
 
-        TServiceProviderConfiguration newConfig = AIServiceProviderAIConfiguration with { UniqueName = $"{AIServiceProviderAIConfiguration.UniqueName}{CurrentNumberOfKernels}" };
+        TServiceProviderConfiguration newConfig = AIServiceProviderAIConfiguration with { 
+            UniqueName = $"{AIServiceProviderAIConfiguration.UniqueName}{CurrentNumberOfKernels}",
+            Scopes = AIServiceProviderAIConfiguration.Scopes,
+            InstanceCount = AIServiceProviderAIConfiguration.InstanceCount,
+            MaxWaitForKernelInSeconds = AIServiceProviderAIConfiguration.MaxWaitForKernelInSeconds,
+            DeploymentTextEmbedding = AIServiceProviderAIConfiguration.DeploymentTextEmbedding,
+        };
         bool shouldAutoAddChatCompletionService = true;
 
         KernelBuilderOptions options = new();
