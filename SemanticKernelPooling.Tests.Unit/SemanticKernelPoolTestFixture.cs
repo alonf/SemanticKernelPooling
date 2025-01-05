@@ -103,32 +103,6 @@ public class SemanticKernelPoolTestFixture : IDisposable
     }
 
     /// <summary>
-    /// Adds a mock response for API calls during testing.
-    /// </summary>
-    /// <param name="requestKey">The key identifying the request to mock.</param>
-    /// <param name="statusCode">The HTTP status code to return.</param>
-    /// <param name="content">The content to return in the response.</param>
-    public void AddMockResponse(string requestKey, HttpStatusCode statusCode, string content)
-    {
-        TestOutputHelper.WriteLine($"Adding mock response for request key: {requestKey}");
-
-        var response = new MockResponse
-        {
-            RequestKey = requestKey,
-            StatusCode = statusCode,
-            Content = content,
-            Headers = new Dictionary<string, string[]>
-            {
-                { "Content-Type", new[] { "application/json" } }
-            }
-        };
-
-        var filePath = Path.Combine(_mockResponsesPath, $"{Guid.NewGuid()}.json");
-        File.WriteAllText(filePath, JsonSerializer.Serialize(response));
-        TestOutputHelper.WriteLine($"Mock response saved to: {filePath}");
-    }
-
-    /// <summary>
     /// Performs cleanup of managed and unmanaged resources.
     /// </summary>
     public void Dispose()

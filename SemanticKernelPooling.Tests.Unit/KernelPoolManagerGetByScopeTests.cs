@@ -10,7 +10,6 @@ public class KernelPoolManagerGetByScopeTests
     private readonly SemanticKernelPoolTestFixture _fixture;
     private ITestOutputHelper OutputHelper => _fixture.TestOutputHelper;
     private string TestScope1 => _fixture.TestScope1;
-    private string TestScope2 => _fixture.TestScope2;
     private int PoolSize => _fixture.PoolSize;
     private int TotalPoolSize => PoolSize * 2;
 

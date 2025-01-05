@@ -17,7 +17,6 @@ public static class ServiceExtension
     /// Registers mock kernel pool implementations for testing purposes.
     /// </summary>
     /// <param name="serviceProvider">The DI service provider.</param>
-    /// <param name="responsesPath">Optional path to mock response files. Defaults to "MockResponses".</param>
     /// <returns>The service provider to enable method chaining.</returns>
     /// <remarks>
     /// <para>
@@ -29,7 +28,7 @@ public static class ServiceExtension
     /// <code>
     /// services.AddSingleton(mockConfiguration.Object);
     /// services.UseSemanticKernelPooling();
-    /// serviceProvider.UseMockKernelPool("TestResponses");
+    /// serviceProvider.UseMockKernelPool();
     /// </code>
     /// </para>
     /// </remarks>
@@ -41,7 +40,7 @@ public static class ServiceExtension
 
         // Register factory for both mock providers
         var factory = (AIServiceProviderConfiguration config, ILoggerFactory loggerFactory) =>
-            new MockKernelPool((MockAIConfiguration)config, loggerFactory, responsesPath);
+            new MockKernelPool((MockAIConfiguration)config, loggerFactory);
 
         registrar.RegisterKernelPoolFactory(AIServiceProviderType.OpenAI, factory);
         registrar.RegisterKernelPoolFactory(AIServiceProviderType.AzureOpenAI, factory);

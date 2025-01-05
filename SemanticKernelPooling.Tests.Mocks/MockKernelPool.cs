@@ -23,7 +23,6 @@ namespace SemanticKernelPooling.Tests.Mocks;
 public class MockKernelPool : AIServicePool<MockAIConfiguration>
 {
     private readonly ILoggerFactory _loggerFactory;
-    private readonly string _responsesPath;
     private int _kernelCreationCount;
 
     /// <summary>
@@ -34,12 +33,10 @@ public class MockKernelPool : AIServicePool<MockAIConfiguration>
     /// <param name="responsesPath">The path to mock response files. Defaults to "MockResponses".</param>
     public MockKernelPool(
         MockAIConfiguration config,
-        ILoggerFactory loggerFactory,
-        string responsesPath = "MockResponses")
+        ILoggerFactory loggerFactory)
         : base(config)
     {
         _loggerFactory = loggerFactory;
-        _responsesPath = responsesPath;
     }
 
     /// <summary>
@@ -54,21 +51,6 @@ public class MockKernelPool : AIServicePool<MockAIConfiguration>
         HttpClient? httpClient)
     {
         Interlocked.Increment(ref _kernelCreationCount);
-
-        if (httpClient == null)
-        {
-            var handler = new MockHttpMessageHandler(
-                _responsesPath,
-                _loggerFactory.CreateLogger<MockHttpMessageHandler>());
-            httpClient = new HttpClient(handler);
-        }
-
-        kernelBuilder.AddAzureOpenAIChatCompletion(
-            deploymentName: "mock-deployment",
-            endpoint: "https://mock.openai.azure.com",
-            serviceId: config.ServiceId,
-            apiKey: config.ApiKey,
-            httpClient: httpClient);
     }
 
     /// <inheritdoc/>
