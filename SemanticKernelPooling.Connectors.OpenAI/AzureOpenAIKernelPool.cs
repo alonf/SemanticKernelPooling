@@ -1,5 +1,4 @@
-﻿using Azure.AI.OpenAI;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
 namespace SemanticKernelPooling.Connectors.OpenAI;
