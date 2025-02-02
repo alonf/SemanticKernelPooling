@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       package_version:
-        description: 'Package version'
+        description: "Package version"
         required: false
   release:
     types: [published]
@@ -19,16 +19,16 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
-        
+          dotnet-version: "9.0.x"
+
       - name: Determine Package Version
         id: get-version
         run: |
-            if [ "${{ github.event.release.tag_name }}" ]; then
-                echo "package_version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
-            else
-                echo "package_version=${{ github.event.inputs.package_version }}" >> $GITHUB_OUTPUT
-            fi
+          if [ "${{ github.event.release.tag_name }}" ]; then
+              echo "package_version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+              echo "package_version=${{ github.event.inputs.package_version }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Restore dependencies for the main package
         run: dotnet restore ./SemanticKernelPooling/SemanticKernelPooling.csproj
