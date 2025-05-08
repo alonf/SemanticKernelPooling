@@ -19,6 +19,8 @@ public class KernelPoolManager : IKernelPoolManager
 
     // Dictionary to maintain round-robin indices for each scope
     private readonly ConcurrentDictionary<string, int> _scopeIndices = new();
+    // Dictionary to maintain round-robin indices for each AIServiceProviderType
+    private readonly ConcurrentDictionary<AIServiceProviderType, int> _providerTypeIndices = new();
     private readonly IConfiguration _configuration;
 
     /// <summary>
@@ -109,7 +111,7 @@ public class KernelPoolManager : IKernelPoolManager
     public async Task<KernelWrapper> GetKernelByNameAsync(string uniqueName)
     {
         //get the service configuration
-        var config = AIConfigurations.First(c => c.UniqueName == uniqueName);
+        var config = AIConfigurations.FirstOrDefault(c => c.UniqueName == uniqueName);
         if (config == null)
             throw new InvalidOperationException($"No configuration found for kernel pool name {uniqueName}");
 
@@ -138,12 +140,16 @@ public class KernelPoolManager : IKernelPoolManager
     /// <inheritdoc />
     public async Task<KernelWrapper> GetKernelAsync(AIServiceProviderType aiServiceProviderType)
     {
-        //get the service configuration by type
-        var config = AIConfigurations.First(c => c.ServiceType == aiServiceProviderType);
-        if (config == null)
+        //get all the service configurations by type
+        var configs = AIConfigurations.Where(c => c.ServiceType == aiServiceProviderType).ToList();
+        if (configs.Count == 0)
             throw new InvalidOperationException($"No configuration found for kernel pool type {aiServiceProviderType}");
 
-        var kernelWrapper = await GetKernelAsync(config);
+        // Use round-robin selection to choose a configuration
+        var index = _providerTypeIndices.AddOrUpdate(aiServiceProviderType, 0, (_, oldValue) => (oldValue + 1)% configs.Count);
+        var selectedConfig = configs[index];
+
+        var kernelWrapper = await GetKernelAsync(selectedConfig);
 
         return kernelWrapper;
     }
