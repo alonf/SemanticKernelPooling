@@ -51,4 +51,9 @@ public class KernelWrapper(Kernel kernel, IKernelPool pool, ILogger logger) : Dy
     /// </summary>
     // ReSharper disable once UnusedMember.Global
     public AIServiceProviderType ServiceProviderType { get; } = pool.ServiceProviderType;
+
+    /// <summary>
+    /// The Unique Name of the kernel pool of this wrapper.
+    /// </summary>
+    public string UniqueName { get; } = pool.UniqueName;
 }

@@ -26,6 +26,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{6ACB62
 		assets\package-icon.png = assets\package-icon.png
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernelPooling.Tests.Mocks", "SemanticKernelPooling.Tests.Mocks\SemanticKernelPooling.Tests.Mocks.csproj", "{D03855DF-C58C-40F2-A361-CDAF7FCEC88C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SemanticKernelPooling.Tests.Unit", "SemanticKernelPooling.Tests.Unit\SemanticKernelPooling.Tests.Unit.csproj", "{B8F6A4BF-2626-4367-95D4-FB00A8254785}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +60,14 @@ Global
 		{EF7CC525-73D8-4416-A52F-D8C44BEA539B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EF7CC525-73D8-4416-A52F-D8C44BEA539B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EF7CC525-73D8-4416-A52F-D8C44BEA539B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D03855DF-C58C-40F2-A361-CDAF7FCEC88C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D03855DF-C58C-40F2-A361-CDAF7FCEC88C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D03855DF-C58C-40F2-A361-CDAF7FCEC88C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D03855DF-C58C-40F2-A361-CDAF7FCEC88C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F6A4BF-2626-4367-95D4-FB00A8254785}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F6A4BF-2626-4367-95D4-FB00A8254785}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F6A4BF-2626-4367-95D4-FB00A8254785}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F6A4BF-2626-4367-95D4-FB00A8254785}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
